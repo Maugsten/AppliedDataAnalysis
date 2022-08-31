@@ -23,17 +23,41 @@ X = poly2.fit_transform(x)
 X_train, X_test, y_train, y_test, x_train, x_test = train_test_split(X,y,x,test_size=0.2)
 
 # scaling the data
-scaler = StandardScaler()
-scaler.fit(X_train)
-X_train_scaled = scaler.transform(X_train)
-X_test_scaled = scaler.transform(X_test)
+def scale(data):
+    scaler = StandardScaler()
+    scaler.fit(data)
+    scaled_data = scaler.transform(data)
+
+    return scaled_data
+
+X_train_scaled = scale(X_train)
+X_test_scaled = scale(X_test)
+x_train_scaled = scale(x_train)
+x_test_scaled = scale(x_test)
+y_train_scaled = scale(y_train)
 
 # ordinary least squares
-clf2 = LinearRegression(fit_intercept=False)
-clf2.fit(X_train,y_train)
-y_predict = clf2.predict(X_train)
+def OLS(x_data, y_data):
+    clf2 = LinearRegression(fit_intercept=False)
+    clf2.fit(x_data,y_data)
+    y_predict = clf2.predict(x_data)
 
+    return y_predict
+
+y_predict = OLS(X_train, y_train)
+y_predict_scaled = OLS(X_train_scaled, y_train_scaled)
+
+
+plt.figure("Figure 1")
+plt.title("Original data")
 plt.scatter(x_train, y_predict, label='Fit')
 plt.scatter(x_train, y_train, label='Data', color='orange', s=15)
+plt.legend()
+plt.show()
+
+plt.figure("Figure 2")
+plt.title("Scaled data")
+plt.scatter(x_train_scaled, y_predict_scaled, label='Fit')
+plt.scatter(x_train_scaled, y_train_scaled, label='Data', color='orange', s=15)
 plt.legend()
 plt.show()
