@@ -49,6 +49,9 @@ def OLS(x_data, y_data):
 y_predict, weights = OLS(X_train, y_train)
 y_predict_scaled, weights_scaled = OLS(X_train_scaled, y_train_scaled)
 
+y_predict_test = X_test @ weights.reshape(-1,1)
+y_predict_test_scaled = X_test_scaled @ weights.reshape(-1,1)
+
 def MSE_R2(y,y_predict):
     mean_sq_err = mean_squared_error(y, y_predict)
     det_coeff = r2_score(y, y_predict)
@@ -57,6 +60,8 @@ def MSE_R2(y,y_predict):
 
 MSE_train, R2_train = MSE_R2(y_train, y_predict)
 MSE_train_scaled, R2_train_scaled = MSE_R2(y_train_scaled, y_predict_scaled)
+MSE_test, R2_test = MSE_R2(y_test, y_predict_test)
+MSE_test_scaled, R2_test_scaled = MSE_R2(y_test_scaled, y_predict_test_scaled)
 
 plt.figure("Figure 1")
 plt.title("Original data")
@@ -88,15 +93,13 @@ plt.text(0.75, -1, textstr2, size=12,
          )
 plt.show()
 
-y_predict_test = X_test @ weights.reshape(-1,1)
-
 plt.figure("Figure 3")
 plt.title("Original data")
 plt.scatter(x_test, y_predict_test, label='Fit')
 plt.scatter(x_test, y_test, label='Test Data', color='orange', s=15)
 plt.legend()
-textstr2 = f"MSE = {MSE_train_scaled:.3f} \nR2 = {R2_train_scaled:.3f}"
-plt.text(0.75, -1, textstr2, size=12,
+textstr3 = f"MSE = {MSE_test:.3f} \nR2 = {R2_test:.3f}"
+plt.text(1.5, 0.2, textstr3, size=12,
          ha="center", va="center",
          bbox=dict(boxstyle="round",
                    fc = "lemonchiffon",
@@ -104,3 +107,21 @@ plt.text(0.75, -1, textstr2, size=12,
                    )
          )
 plt.show()
+
+plt.figure("Figure 4")
+plt.title("Scaled data")
+plt.scatter(x_test_scaled, y_predict_test_scaled, label='Fit')
+plt.scatter(x_test_scaled, y_test_scaled, label='Test Data', color='orange', s=15)
+plt.legend()
+textstr4 = f"MSE = {MSE_test_scaled:.3f} \nR2 = {R2_test_scaled:.3f}"
+plt.text(1.5, 0.2, textstr3, size=12,
+         ha="center", va="center",
+         bbox=dict(boxstyle="round",
+                   fc = "lemonchiffon",
+                   alpha = 0.5,
+                   )
+         )
+plt.show()
+
+print(f"MSE_train = {MSE_train:.4f} \nMSE_train_scaled = {MSE_train_scaled:.4f} \nMSE_test = {MSE_test:.4f} \nMSE_test_scaled = {MSE_test_scaled:.4f}")
+print(f"R2_train = {R2_train:.4f} \nR2_train_scaled = {R2_train_scaled:.4f} \nR2_test = {R2_test:.4f} \nR2_test_scaled = {R2_test_scaled:.4f}")
