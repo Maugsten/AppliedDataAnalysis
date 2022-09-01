@@ -88,6 +88,19 @@ plt.text(0.75, -1, textstr2, size=12,
          )
 plt.show()
 
-""""
-For the test data we need to get the acutal weights from scikit. 
-"""
+y_predict_test = X_test @ weights.reshape(-1,1)
+
+plt.figure("Figure 3")
+plt.title("Original data")
+plt.scatter(x_test, y_predict_test, label='Fit')
+plt.scatter(x_test, y_test, label='Test Data', color='orange', s=15)
+plt.legend()
+textstr2 = f"MSE = {MSE_train_scaled:.3f} \nR2 = {R2_train_scaled:.3f}"
+plt.text(0.75, -1, textstr2, size=12,
+         ha="center", va="center",
+         bbox=dict(boxstyle="round",
+                   fc = "lemonchiffon",
+                   alpha = 0.5,
+                   )
+         )
+plt.show()
