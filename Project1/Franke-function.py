@@ -6,6 +6,7 @@ from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import numpy as np
 from random import random, seed
+from sklearn.model_selection import train_test_split
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')
@@ -23,6 +24,7 @@ def FrankeFunction(x,y):
     return term1 + term2 + term3 + term4
 
 np.random.seed(10)
+
 z = FrankeFunction(x, y) + np.random.normal(0, 0.1, x.shape)  # Franke function with stochastic noise
 
 z_ = z.flatten().reshape(-1,1)
@@ -62,25 +64,53 @@ z18 = x_ * y_**4
 z19 = x_**3 * y_**2
 z20 = x_**2 * y_**3
 
-list_of_features = [z0, z2, z3, z4, z5, z6, z7, z8, z9, z10,\
+list_of_features = [z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10,\
     z11, z12, z13, z14, z15, z16, z17, z18, z19, z20]
 
-X = np.array(list_of_features).transpose()  # design matrix
+startdeg = 1
+polydeg = 5
 
-# SVD
-U, Sigma, Vt = np.linalg.svd(X, full_matrices=False)
-z_tilde = U @ U.transpose() @ z_  # best fit
-z_tilde = z_tilde.reshape((20,20))
+MSE_train = np.zeros(polydeg-startdeg+1)
+MSE_test = np.zeros(polydeg-startdeg+1)
+R2_train = np.zeros(polydeg-startdeg+1)
+R2_test = np.zeros(polydeg-startdeg+1)
 
-# calculating the mean square error
-MSE = np.sum((z - z_tilde)**2)/len(z)
-print(f"MSE = {MSE:.4f}")
+for i in range(startdeg,polydeg+1):
 
-z_mean = np.sum(z)/len(z)
+    if startdeg < 1:
+        raise ValueError("first polynomial degree must be 1 or higher")
+    
+    if i == 1:
+        new_list_of_features = list_of_features[0:3]
+    elif i == 2:
+        new_list_of_features = list_of_features[0:6]
+    elif i == 3:
+        new_list_of_features = list_of_features[0:10]
+    elif i == 4:
+        new_list_of_features = list_of_features[0:15]
+    elif i == 5:
+        new_list_of_features = list_of_features[0:21]
+    else:
+        raise ValueError("this code only allows polynomial degrees up to fifth order")
 
-# calculating the R2 score
-R2 = 1 - np.sum((z - z_tilde)**2)/np.sum((z - z_mean)**2)
-print(f"R2 = {R2:.4f}")
+    X = np.array(new_list_of_features).transpose()  # design matrix
+
+    # SVD
+    U, Sigma, Vt = np.linalg.svd(X, full_matrices=False)
+    z_tilde = U @ U.transpose() @ z_  # best fit
+    z_tilde = z_tilde.reshape((20,20))
+
+    # calculating the mean square error
+    MSE_train[i-startdeg] = np.sum((z - z_tilde)**2)/len(z)
+
+    z_mean = np.sum(z)/len(z)
+
+    # calculating the R2 score
+    R2_train[i-startdeg] = 1 - np.sum((z - z_tilde)**2)/np.sum((z - z_mean)**2)
+
+print(MSE_train)
+print("\n")
+print(R2_train)
 
 # Plot the surface.
 surf = ax.plot_surface(x, y, z, cmap=cm.coolwarm,
