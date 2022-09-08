@@ -100,6 +100,7 @@ for i in range(startdeg,polydeg+1):
     X_train, X_test, z_train, z_test, x_train, x_test = train_test_split(X,z_,x_,test_size=0.2)
     
     # SVD
+<<<<<<< HEAD
     def singular_value_decomp(X, z):
         """
         Input: 
@@ -112,14 +113,20 @@ for i in range(startdeg,polydeg+1):
         U = np.linalg.svd(X, full_matrices=False)[0]
         z_tilde = U @ U.transpose() @ z_  
         z_tilde = z_tilde.reshape((20,20))
+=======
+    U, Sigma, Vt = np.linalg.svd(X, full_matrices=False)
+    z_tilde = U @ U.transpose() @ z_  # best fit
+>>>>>>> 4e15fd3... fixed small bug
 
     # calculating the mean square error
-    MSE_train[i-startdeg] = np.sum((z - z_tilde)**2)/len(z)
+    MSE_train[i-startdeg] = np.sum((z_ - z_tilde)**2)/len(z_)
 
-    z_mean = np.sum(z)/len(z)
+    z_mean = np.sum(z_)/len(z_)
 
     # calculating the R2 score
-    R2_train[i-startdeg] = 1 - np.sum((z - z_tilde)**2)/np.sum((z - z_mean)**2)
+    R2_train[i-startdeg] = 1 - np.sum((z_ - z_tilde)**2)/np.sum((z_ - z_mean)**2)
+
+    z_tilde = z_tilde.reshape((20,20))
 
 print(MSE_train)
 print("\n")
