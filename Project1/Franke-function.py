@@ -7,6 +7,7 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import numpy as np
 from random import random, seed
 from sklearn.model_selection import train_test_split
+from IPython import embed
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')
@@ -95,10 +96,22 @@ for i in range(startdeg,polydeg+1):
 
     X = np.array(new_list_of_features).transpose()  # design matrix
 
+    # splitting into train and test data
+    X_train, X_test, z_train, z_test, x_train, x_test = train_test_split(X,z_,x_,test_size=0.2)
+    
     # SVD
-    U, Sigma, Vt = np.linalg.svd(X, full_matrices=False)
-    z_tilde = U @ U.transpose() @ z_  # best fit
-    z_tilde = z_tilde.reshape((20,20))
+    def singular_value_decomp(X, z):
+        """
+        Input: 
+            X - design matrix
+            z - data we want to fit
+
+        Return:
+            z_tilde - fit of data z
+        """
+        U = np.linalg.svd(X, full_matrices=False)[0]
+        z_tilde = U @ U.transpose() @ z_  
+        z_tilde = z_tilde.reshape((20,20))
 
     # calculating the mean square error
     MSE_train[i-startdeg] = np.sum((z - z_tilde)**2)/len(z)
