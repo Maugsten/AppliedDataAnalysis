@@ -12,7 +12,7 @@ from IPython import embed
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 
-# Make data.
+# Make data. No need to scale this data as it's already in the range (0,1)
 x = np.arange(0, 1, 0.05)
 y = np.arange(0, 1, 0.05)
 x, y = np.meshgrid(x,y)
@@ -71,6 +71,8 @@ list_of_features = [z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10,\
 startdeg = 1
 polydeg = 5
 
+z_tilde_train = 0
+
 MSE_train = np.zeros(polydeg-startdeg+1)
 MSE_test = np.zeros(polydeg-startdeg+1)
 R2_train = np.zeros(polydeg-startdeg+1)
@@ -97,45 +99,49 @@ for i in range(startdeg,polydeg+1):
     X = np.array(new_list_of_features).transpose()  # design matrix
 
     # splitting into train and test data
-    X_train, X_test, z_train, z_test, x_train, x_test = train_test_split(X,z_,x_,test_size=0.2)
+    X_train, X_test, z_train, z_test, x_train, x_test, y_train, y_test = train_test_split(X,z_,x_,y_,test_size=0.2)
+    print(np.shape(x_train))
     
     # SVD
-<<<<<<< HEAD
     def singular_value_decomp(X, z):
         """
         Input: 
-            X - design matrix
-            z - data we want to fit
+            * X - design matrix
+            * z_ - data we want to fit
 
         Return:
-            z_tilde - fit of data z
+            * z_tilde - predicted values
+            * betas - weights to apply on test data
         """
-        U = np.linalg.svd(X, full_matrices=False)[0]
-        z_tilde = U @ U.transpose() @ z_  
-        z_tilde = z_tilde.reshape((20,20))
-=======
-    U, Sigma, Vt = np.linalg.svd(X, full_matrices=False)
-    z_tilde = U @ U.transpose() @ z_  # best fit
->>>>>>> 4e15fd3... fixed small bug
+        U, Sigma, Vt = np.linalg.svd(X, full_matrices=False)
+        z_tilde = U @ U.transpose() @ z  
+        betas =  np.linalg.pinv(X.transpose() @ X) @ X.transpose() @ z  # this is not the SVD way
 
-    # calculating the mean square error
-    MSE_train[i-startdeg] = np.sum((z_ - z_tilde)**2)/len(z_)
+        return z_tilde, betas
 
+    z_tilde_train, betas = singular_value_decomp(X_train, z_train)
+    z_tilde_test = X_test @ betas
+
+    # mean square error
+    MSE_train[i-startdeg] = np.sum((z_train - z_tilde_train)**2)/len(z_train)
+    MSE_test[i-startdeg] = np.sum((z_test - z_tilde_test)**2)/len(z_test)
+
+    # mean
     z_mean = np.sum(z_)/len(z_)
 
-    # calculating the R2 score
-    R2_train[i-startdeg] = 1 - np.sum((z_ - z_tilde)**2)/np.sum((z_ - z_mean)**2)
+    # R2 score
+    R2_train[i-startdeg] = 1 - np.sum((z_train - z_tilde_train)**2)/np.sum((z_train - z_mean)**2)
+    R2_test[i-startdeg] = 1 - np.sum((z_test - z_tilde_test)**2)/np.sum((z_test - z_mean)**2)
 
-    z_tilde = z_tilde.reshape((20,20))
-
-print(MSE_train)
-print("\n")
-print(R2_train)
+# get the right shape for plotting
+z_tilde_train = z_tilde_train.reshape((-1,1))
+z_tilde_test = z_tilde_test.reshape((-1,1))
+print(np.shape(z_tilde_train))
 
 # Plot the surface.
-surf = ax.plot_surface(x, y, z, cmap=cm.coolwarm,
+surf = ax.plot_surface(x_train, y_train, z_train, cmap=cm.coolwarm,
                     linewidth=0, antialiased=False)
-surf1 = ax.plot_surface(x, y, z_tilde, cmap=cm.bone,
+surf1 = ax.plot_surface(x_train, y_train, z_tilde_train, cmap=cm.bone,
                     linewidth=0, antialiased=False)
                     
 # Customize the z axis.
