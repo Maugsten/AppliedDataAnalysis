@@ -29,41 +29,21 @@ z_ = z.flatten().reshape(-1,1)
 x_ = x.flatten()
 y_ = y.flatten()
 
-# Setting up the design matrix with fifth order polynomial
-z0 = np.ones(len(x_))
+def create_X(x, y, n):
+	if len(x.shape) > 1:
+		x = np.ravel(x)
+		y = np.ravel(y)
 
-# 1st order
-z1 = x_ 
-z2 = y_
+	N = len(x)
+	l = int((n+1)*(n+2)/2)  # Number of elements in beta
+	X = np.ones((N,l))
 
-# 2nd order
-z3 = x_**2
-z4 = y_**2
-z5 = x_*y_
+	for i in range(1,n+1):
+		q = int((i)*(i+1)/2)
+		for k in range(i+1):
+			X[:,q+k] = (x**(i-k))*(y**k)
 
-# 3rd order
-z6 = x_**3
-z7 = y_**3
-z8 = x_**2 * y_
-z9 = x_ * y_**3
-
-# 4th order
-z10 = x_**4
-z11 = y_**4
-z12 = x_**2 * y_**2
-z13 = x_**3 * y_
-z14 = x_ * y_**3
-
-#5th order
-z15 = x_**5
-z16 = y_**5
-z17 = x_**4 * y_
-z18 = x_ * y_**4
-z19 = x_**3 * y_**2
-z20 = x_**2 * y_**3
-
-list_of_features = [z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10,\
-    z11, z12, z13, z14, z15, z16, z17, z18, z19, z20]
+	return X
 
 startdeg = 1
 polydeg = 5
@@ -92,23 +72,8 @@ def singular_value_decomp(X, z):
 
 for i in range(startdeg,polydeg+1):
 
-    if startdeg < 1:
-        raise ValueError("first polynomial degree must be 1 or higher")
-    
-    if i == 1:
-        new_list_of_features = list_of_features[0:3]
-    elif i == 2:
-        new_list_of_features = list_of_features[0:6]
-    elif i == 3:
-        new_list_of_features = list_of_features[0:10]
-    elif i == 4:
-        new_list_of_features = list_of_features[0:15]
-    elif i == 5:
-        new_list_of_features = list_of_features[0:21]
-    else:
-        raise ValueError("this code only allows polynomial degrees up to fifth order")
-
-    X = np.array(new_list_of_features).transpose()  # design matrix
+    # design matrix
+    X = create_X(x,y,i)  
 
     # splitting into train and test data
     X_train, X_test, z_train, z_test, x_train, x_test, y_train, y_test = train_test_split(X,z_,x_,y_,test_size=0.2)
