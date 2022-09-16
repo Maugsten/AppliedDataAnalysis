@@ -136,7 +136,7 @@ for i in range(startdeg,polydeg+1):
 # get the right shape for plotting
 z_tilde_train = z_tilde_train.reshape((-1,1))
 z_tilde_test = z_tilde_test.reshape((-1,1))
-print(np.shape(z_tilde_train))
+# print(np.shape(z_tilde_train))
 
 # Plot the surface.
 surf = ax.plot_surface(x_train, y_train, z_train, cmap=cm.coolwarm,
