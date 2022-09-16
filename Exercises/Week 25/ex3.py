@@ -50,7 +50,7 @@ for i in range(startdeg,polydeg):
 
     # ordinary least squares
     def OLS(x_data, y_data):
-        clf = LinearRegression(fit_intercept=False)
+        clf = LinearRegression(fit_intercept=False) # includes the intercept
         clf.fit(x_data,y_data)
         y_predict = clf.predict(x_data)
         weights = clf.coef_
