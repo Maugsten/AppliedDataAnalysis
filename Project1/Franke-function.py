@@ -38,6 +38,7 @@ def create_X(x, y, n):
     Input:
         x (numpy array): Mesh for x values.
         y (numpy array): Mesh for y values.
+        n (int): Highest polynomial degree
     Output:
         x (numpy array): Design matrix.
     """
@@ -72,10 +73,12 @@ def svd_algorithm(X, z):
         betas_variance (numpy array): Variance of each parameters beta
     """
     
-    U, Sigma, Vt = np.linalg.svd(X, full_matrices=False)
+    U, Sigma, Vt = np.linalg.svd(X, full_matrices=False) 
     betas = Vt.transpose() @ np.diag(1/Sigma) @ U.transpose() @ z
-    betas_variance = sigma**2 * np.linalg.pinv(Vt.transpose() @ np.diag(Sigma) @ np.diag(Sigma) @ Vt)
-    betas_variance = np.diag(betas_variance)
+
+    """ ----------------------- FIKS DETTE! DU VET IKKE ALLTID SIGMA ----------------------- """
+    cov_matrix = sigma**2 * np.linalg.pinv(Vt.transpose() @ np.diag(Sigma) @ np.diag(Sigma) @ Vt) 
+    betas_variance = np.diag(cov_matrix)
 
     return betas, betas_variance
 
@@ -118,6 +121,10 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
     collected_betas = []
     collected_betas_variance = []
 
+    # Make lists for parameters and variance
+    bias = np.zeros(polydeg-startdeg+1)
+    vari = np.zeros(polydeg-startdeg+1)
+
     # Loop for OLS with increasing order of polynomial fit
     for i in range(startdeg, polydeg+1):
 
@@ -132,7 +139,7 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
 
             for j in range(1000): # For each bootstrap
                 # Pick new randomly sampled training data and matching design matrix
-                indx = np.random.randint(0,100,1000)
+                indx = np.random.randint(0,100,len(X_train))
                 X_train_btstrp = X_train[indx]
                 z_train_btstrp = z_train[indx]
 
@@ -141,11 +148,14 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
 
             # Average parameters over the bootstraps
             betas_averaged = np.mean(beta, axis=1)
-            betas = np.zeros((len(X_train[0]),1))
+            betas = np.zeros((len(X_train[0]),1))  # prøv reshape her 
             betas[:,0] = betas_averaged
 
             # Calculate variances of the parameters
             betas_variance = np.std(beta, axis=1)
+        
+        elif resampling == "CrossValidation":
+            a=1
 
         else:
             # OLS with SVD
@@ -160,11 +170,15 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
         collected_betas_variance.append(betas_variance)
 
         # Calculate mean square errors
-        MSE_train[i-startdeg] = np.sum((z_train - z_tilde_train)**2)/len(z_train)
-        MSE_test[i-startdeg] = np.sum((z_test - z_tilde_test)**2)/len(z_test)
+        MSE_train[i-startdeg] = np.mean((z_train - z_tilde_train)**2)
+        MSE_test[i-startdeg] = np.mean((z_test - z_tilde_test )**2)
 
         # Calculate mean
-        z_mean = np.sum(z_)/len(z_)
+        z_mean = np.mean(z_)
+
+        bias[i-startdeg] = np.mean((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)
+        
+        vari[i-startdeg] = np.mean((z_tilde_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)
 
         # Calculate R2 score
         R2_train[i-startdeg] = 1 - np.sum((z_train - z_tilde_train)**2)/np.sum((z_train - z_mean)**2)
@@ -196,26 +210,35 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
     ax2.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
     ax2.set_title("OLS fit")
     fig.colorbar(surf, shrink=0.5, aspect=10)
-    plt.show()
 
     # Plot of the MSEs
     x_axis = np.linspace(startdeg, polydeg, polydeg-startdeg+1)
+    plt.figure(figsize=(6, 4))
     plt.plot(x_axis, MSE_train, label="Training Sample")
     plt.plot(x_axis, MSE_test, label="Test Sample")
     plt.title("MSE vs Complexity")
     plt.xlabel("Model Complexity")
     plt.ylabel("Mean Square Error")
     plt.legend()
-    plt.show()
+
+    # Plot of Bias-Variance of test data
+    plt.figure(figsize=(6, 4))
+    plt.plot(x_axis, MSE_test, label="MSE")
+    plt.plot(x_axis, bias, '--', label="Bias")
+    plt.plot(x_axis, vari, '--', label="Variance")
+    plt.title("Bias-Variance trade off")
+    plt.xlabel("Model Complexity")
+    plt.ylabel("Error")
+    plt.legend()
 
     # Plot of the R2 scores
+    plt.figure(figsize=(6, 4))
     plt.plot(x_axis, R2_train, label="Training Sample")
     plt.plot(x_axis, R2_test, label="Test Sample")
     plt.title("R2 score vs Complexity")
     plt.xlabel("Model Complexity")
     plt.ylabel("R2 score")
     plt.legend()
-    plt.show()
 
     # Plotting paramaters and variance against terms
     plt.figure(figsize=(6, 4))
@@ -226,6 +249,7 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
     plt.title('Optimal parameters beta')
     plt.ylabel('Beta value []')
     plt.xlabel('Term index')
+    plt.ylim([-200,200])
     plt.show()
 
 
@@ -243,8 +267,8 @@ if __name__ == "__main__":
     z = FrankeFunction(x, y) + np.random.normal(0, sigma, x.shape)
 
     # Preform regression
-    ordinary_least_squares(x, y, z, polydeg=5, resampling='None')
-    ordinary_least_squares(x, y, z, polydeg=5, resampling='Bootstrap')
+    # ordinary_least_squares(x, y, z, polydeg=5, resampling='None')
+    ordinary_least_squares(x, y, z, polydeg=8, resampling='Bootstrap')
 
 
     """
