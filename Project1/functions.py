@@ -134,6 +134,7 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             n_bootstraps = 100
             beta = np.zeros((len(X_train[0]), n_bootstraps)) # 1000 is number of bootstraps
 
+            z_tilde_train = np.zeros((len(X_train), n_bootstraps)) 
             z_tilde_test = np.zeros((len(X_test), n_bootstraps)) # 1000 is number of bootstraps
 
             for j in range(n_bootstraps): # For each bootstrap
@@ -146,6 +147,7 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
                 beta[:,j] = svd_algorithm(X_train_btstrp, z_train_btstrp)[0].flatten()  
 
                 b = svd_algorithm(X_train_btstrp, z_train_btstrp)[0]
+                z_tilde_train[:,j] = X_train @ b.flatten()
                 z_tilde_test[:,j] = X_test @ b.flatten()
 
             # Average parameters over the bootstraps
@@ -154,8 +156,7 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             betas[:,0] = betas_averaged
 
             # Calculate variances of the parameters
-            betas_variance = np.std(beta, axis=1) 
-            """ SJEKK OM DET SKAL VÆRE STD HER """
+            betas_variance = np.var(beta, axis=1) 
         
         elif resampling == "CrossValidation":
             k = 10
@@ -167,6 +168,7 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             X_groups = np.array_split(X_shuffled, k)
             z_groups = np.array_split(z_shuffled, k)
 
+            z_tilde_train = np.zeros((len(X)-len(X_groups[0]), k))
             z_tilde_test = np.zeros((len(X_groups[0]), k)) 
 
             for j in range(k):                
@@ -183,6 +185,7 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
 
                 # OLS with SVD
                 b = svd_algorithm(X_train, z_train)[0]
+                z_tilde_train[:,j] = X_train @ b.flatten()
                 z_tilde_test[:,j] = X_test @ b.flatten()
 
                 """ THIS IS WRONG, BUT ALLOW SCRIPT TO BE RUN """
@@ -196,40 +199,31 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             # OLS with SVD
             betas, betas_variance = svd_algorithm(X_train, z_train)
 
+            z_tilde_train = np.zeros((len(X_train), 1))
             z_tilde_test = np.zeros((len(X_test), 1))
+            
+            z_tilde_train = X_train @ betas
             z_tilde_test = X_test @ betas 
 
-
-
-        # Calculate training fit and test fit
-        z_tilde_train = X_train @ betas
-        # z_tilde_test = X_test @ betas
 
         # Collect parameters
         collected_betas.append(betas)
         collected_betas_variance.append(betas_variance)
 
         # Calculate mean square errors
-        MSE_train[i-startdeg] = np.mean((z_train - z_tilde_train)**2)
-        # MSE_test[i-startdeg] = np.mean((z_test - z_tilde_test )**2)
+        MSE_train[i-startdeg] =np.mean( np.mean((z_train - z_tilde_train)**2, axis=1, keepdims=True) )
         MSE_test[i-startdeg] = np.mean( np.mean((z_test - z_tilde_test)**2, axis=1, keepdims=True) )
 
         # Calculate mean
         z_mean = np.mean(z_)
 
-        bias[i-startdeg] = np.mean( (z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2 )
-        # bias[i-startdeg] = np.mean( (z_test - np.mean(z_tilde_test))**2 )
-        
+        # Bias and variance
+        bias[i-startdeg] = np.mean( (z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2 )        
         vari[i-startdeg] = np.mean( np.var(z_tilde_test, axis=1, keepdims=True) )
-        # vari[i-startdeg] = np.mean( np.var(z_tilde_test) )
 
         # Calculate R2 score
-        R2_train[i-startdeg] = 1 - np.sum((z_train - z_tilde_train)**2)/np.sum((z_train - z_mean)**2)
+        R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - z_mean)**2)
         R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - z_mean)**2)
-        
-        # Calculate R2 score
-        # R2_train[i-startdeg] = 1 - np.sum((z_train - z_tilde_train)**2)/np.sum((z_train - z_mean)**2)
-        # R2_test[i-startdeg] = 1 - np.sum((z_test - z_tilde_test)**2)/np.sum((z_test - z_mean)**2)
 
     # Calculate predicted values using all data (X)
     z_tilde = X @ svd_algorithm(X, z_)[0]
