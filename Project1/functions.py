@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
+from math import isqrt
+import seaborn as sns
 
 
 def FrankeFunction(x, y):
@@ -101,8 +103,6 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
 
     # Format data
     z_ = z.flatten().reshape(-1, 1)
-    x_ = x.flatten()
-    y_ = y.flatten()
 
     # Set the first order of polynomials for design matrix to be looped from
     startdeg = 1
@@ -231,22 +231,58 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
         # R2_train[i-startdeg] = 1 - np.sum((z_train - z_tilde_train)**2)/np.sum((z_train - z_mean)**2)
         # R2_test[i-startdeg] = 1 - np.sum((z_test - z_tilde_test)**2)/np.sum((z_test - z_mean)**2)
 
+    
     # Calculate predicted values using all data (X)
     z_tilde = X @ svd_algorithm(X, z_)[0]
-
+    
     # Get the right shape for plotting
-    z_ = z_.reshape((len(x), len(x)))
-    z_tilde = z_tilde.reshape((len(x), len(x)))
+    # root_int = isqrt(len(z_))  # round the square root down to the nearest integer
+    # z_plot = z_[0:root_int**2]
+    # z_plot = z_plot.reshape((root_int, root_int))
+
+    # root_int1 = isqrt(len(z_tilde))
+    # z_tilde_plot = z_tilde[0:root_int1**2]
+    # z_tilde_plot = z_tilde_plot.reshape((root_int1, root_int1))
+
+    # x_plot = x.flatten()
+    # x_plot = x_plot[0:root_int**2]
+    # x_plot = x_plot.reshape((root_int, root_int))
+
+    # y_plot = y.flatten()
+    # y_plot = y_plot[0:root_int**2]
+    # y_plot = y_plot.reshape((root_int, root_int))
+
+    m = np.shape(z)[0]
+    n = np.shape(z)[1]
+
+    z_plot = z_.reshape((m,n))
+    z_tilde_plot = z_tilde.reshape((m,n))
 
     z_tilde_train = X @ betas
 
+    fig, ax = plt.subplots(1,3)
+    plt.subplot(1,3,1)
+    plt.imshow(z_plot)
+    plt.title("Original data")
+
+    plt.subplot(1,3,2)
+    plt.imshow(z_tilde_plot)
+    plt.title("OLS fit")
+
+    plt.subplot(1,3,3)
+    plt.imshow(z_tilde_plot - z_plot)
+    plt.title("Difference")
+
+    plt.show()
+
+    breakpoint()
     # Plots of the surfaces.
     fig = plt.figure(figsize=plt.figaspect(0.5), constrained_layout=True)
     ax1 = fig.add_subplot(1, 2, 1, projection='3d')
     ax2 = fig.add_subplot(1, 2, 2, projection='3d')
-    surf = ax1.plot_surface(x, y, z_, cmap=cm.coolwarm,
+    surf = ax1.plot_surface(x, y, z_plot, cmap=cm.coolwarm,
                             linewidth=0, antialiased=False)
-    surf1 = ax2.plot_surface(x, y, z_tilde, cmap=cm.coolwarm,
+    surf1 = ax2.plot_surface(x, y, z_tilde_plot, cmap=cm.coolwarm,
                              linewidth=0, antialiased=False)
     ax1.set_zlim(-0.10, 1.40)
     ax1.zaxis.set_major_locator(LinearLocator(10))
