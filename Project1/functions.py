@@ -134,7 +134,7 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             n_bootstraps = 100
             beta = np.zeros((len(X_train[0]), n_bootstraps)) # 1000 is number of bootstraps
 
-            z_predict = np.zeros((len(X_test), n_bootstraps)) # 1000 is number of bootstraps
+            z_tilde_test = np.zeros((len(X_test), n_bootstraps)) # 1000 is number of bootstraps
 
             for j in range(n_bootstraps): # For each bootstrap
                 # Pick new randomly sampled training data and matching design matrix
@@ -146,8 +146,7 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
                 beta[:,j] = svd_algorithm(X_train_btstrp, z_train_btstrp)[0].flatten()  
 
                 b = svd_algorithm(X_train_btstrp, z_train_btstrp)[0]
-
-                z_predict[:,j] = X_test @ b.flatten()
+                z_tilde_test[:,j] = X_test @ b.flatten()
 
             # Average parameters over the bootstraps
             betas_averaged = np.mean(beta, axis=1)
@@ -168,7 +167,7 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             X_groups = np.array_split(X_shuffled, k)
             z_groups = np.array_split(z_shuffled, k)
 
-            z_predict = np.zeros((len(X_groups[0]), k)) 
+            z_tilde_test = np.zeros((len(X_groups[0]), k)) 
 
             for j in range(k):                
                 X_test = X_groups[j] # Picks j'th matrix as test matrix
@@ -184,7 +183,7 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
 
                 # OLS with SVD
                 b = svd_algorithm(X_train, z_train)[0]
-                z_predict[:,j] = X_test @ b.flatten()
+                z_tilde_test[:,j] = X_test @ b.flatten()
 
                 """ THIS IS WRONG, BUT ALLOW SCRIPT TO BE RUN """
                 betas, betas_variance = svd_algorithm(X_train, z_train) 
@@ -197,9 +196,14 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             # OLS with SVD
             betas, betas_variance = svd_algorithm(X_train, z_train)
 
+            z_tilde_test = np.zeros((len(X_test), 1))
+            z_tilde_test = X_test @ betas 
+
+
+
         # Calculate training fit and test fit
         z_tilde_train = X_train @ betas
-        z_tilde_test = X_test @ betas
+        # z_tilde_test = X_test @ betas
 
         # Collect parameters
         collected_betas.append(betas)
@@ -208,20 +212,24 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
         # Calculate mean square errors
         MSE_train[i-startdeg] = np.mean((z_train - z_tilde_train)**2)
         # MSE_test[i-startdeg] = np.mean((z_test - z_tilde_test )**2)
-        MSE_test[i-startdeg] = np.mean( np.mean((z_test - z_predict)**2, axis=1, keepdims=True) )
+        MSE_test[i-startdeg] = np.mean( np.mean((z_test - z_tilde_test)**2, axis=1, keepdims=True) )
 
         # Calculate mean
         z_mean = np.mean(z_)
 
-        bias[i-startdeg] = np.mean( (z_test - np.mean(z_predict, axis=1, keepdims=True))**2 )
+        bias[i-startdeg] = np.mean( (z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2 )
         # bias[i-startdeg] = np.mean( (z_test - np.mean(z_tilde_test))**2 )
         
-        vari[i-startdeg] = np.mean( np.var(z_predict, axis=1, keepdims=True) )
+        vari[i-startdeg] = np.mean( np.var(z_tilde_test, axis=1, keepdims=True) )
         # vari[i-startdeg] = np.mean( np.var(z_tilde_test) )
 
         # Calculate R2 score
         R2_train[i-startdeg] = 1 - np.sum((z_train - z_tilde_train)**2)/np.sum((z_train - z_mean)**2)
-        R2_test[i-startdeg] = 1 - np.sum((z_test - z_tilde_test)**2)/np.sum((z_test - z_mean)**2)
+        R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - z_mean)**2)
+        
+        # Calculate R2 score
+        # R2_train[i-startdeg] = 1 - np.sum((z_train - z_tilde_train)**2)/np.sum((z_train - z_mean)**2)
+        # R2_test[i-startdeg] = 1 - np.sum((z_test - z_tilde_test)**2)/np.sum((z_test - z_mean)**2)
 
     # Calculate predicted values using all data (X)
     z_tilde = X @ svd_algorithm(X, z_)[0]
@@ -253,8 +261,8 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
     # Plot of the MSEs
     x_axis = np.linspace(startdeg, polydeg, polydeg-startdeg+1)
     plt.figure(figsize=(6, 4))
-    plt.plot(x_axis, np.log(MSE_train), label="Training Sample")
-    plt.plot(x_axis, np.log(MSE_test), label="Test Sample")
+    plt.plot(x_axis, MSE_train, label="Training Sample")
+    plt.plot(x_axis, MSE_test, label="Test Sample")
     plt.title("MSE vs Complexity")
     plt.xlabel("Model Complexity")
     plt.ylabel("Mean Square Error")
@@ -262,10 +270,10 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
 
     # Plot of Bias-Variance of test data
     plt.figure(figsize=(6, 4))
-    plt.plot(x_axis, np.log(MSE_test), label="MSE")
-    plt.plot(x_axis, np.log(bias), '--', label="Bias")
-    plt.plot(x_axis, np.log(vari), '--', label="Variance")
-    plt.plot(x_axis, np.log(bias+vari), '--', label="sum")
+    plt.plot(x_axis, MSE_test, label="MSE")
+    plt.plot(x_axis, bias, '--', label="Bias")
+    plt.plot(x_axis, vari, '--', label="Variance")
+    plt.plot(x_axis, bias+vari, '--', label="sum")
     plt.title("Bias-Variance trade off")
     plt.xlabel("Model Complexity")
     plt.ylabel("Error")
@@ -273,8 +281,8 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
 
     # Plot of the R2 scores
     plt.figure(figsize=(6, 4))
-    plt.plot(x_axis, np.log(R2_train), label="Training Sample")
-    plt.plot(x_axis, np.log(R2_test), label="Test Sample")
+    plt.plot(x_axis, R2_train, label="Training Sample")
+    plt.plot(x_axis, R2_test, label="Test Sample")
     plt.title("R2 score vs Complexity")
     plt.xlabel("Model Complexity")
     plt.ylabel("R2 score")
