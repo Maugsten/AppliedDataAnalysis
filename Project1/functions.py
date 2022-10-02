@@ -228,23 +228,6 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
     
     # Calculate predicted values using all data (X)
     z_tilde = X @ svd_algorithm(X, z_)[0]
-    
-    # Get the right shape for plotting
-    # root_int = isqrt(len(z_))  # round the square root down to the nearest integer
-    # z_plot = z_[0:root_int**2]
-    # z_plot = z_plot.reshape((root_int, root_int))
-
-    # root_int1 = isqrt(len(z_tilde))
-    # z_tilde_plot = z_tilde[0:root_int1**2]
-    # z_tilde_plot = z_tilde_plot.reshape((root_int1, root_int1))
-
-    # x_plot = x.flatten()
-    # x_plot = x_plot[0:root_int**2]
-    # x_plot = x_plot.reshape((root_int, root_int))
-
-    # y_plot = y.flatten()
-    # y_plot = y_plot[0:root_int**2]
-    # y_plot = y_plot.reshape((root_int, root_int))
 
     m = np.shape(z)[0]
     n = np.shape(z)[1]
@@ -269,7 +252,6 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
 
     plt.show()
 
-    breakpoint()
     # Plots of the surfaces.
     fig = plt.figure(figsize=plt.figaspect(0.5), constrained_layout=True)
     ax1 = fig.add_subplot(1, 2, 1, projection='3d')
