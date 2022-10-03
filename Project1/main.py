@@ -18,8 +18,8 @@ if __name__ == "__main__":
     z = FrankeFunction(x, y) + np.random.normal(0, sigma, x.shape)
 
     # Preform regression
-    ordinary_least_squares(x, y, z, polydeg=5, resampling='None')
-    # ordinary_least_squares(x, y, z, polydeg=5, resampling='Bootstrap')
+    # ordinary_least_squares(x, y, z, polydeg=20, resampling='None')
+    ordinary_least_squares(x, y, z, polydeg=20, resampling='Bootstrap')
     # ordinary_least_squares(x, y, z, polydeg=5, resampling='CrossValidation')
 
     """

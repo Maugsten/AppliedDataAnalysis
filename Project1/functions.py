@@ -1,11 +1,9 @@
+from cmath import log10
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
-from math import isqrt
-import seaborn as sns
-
 
 def FrankeFunction(x, y):
     """
@@ -71,13 +69,11 @@ def svd_algorithm(X, z):
     U, Sigma, Vt = np.linalg.svd(X, full_matrices=False) 
     betas = Vt.transpose() @ np.diag(1/Sigma) @ U.transpose() @ z
 
-    """ ----------------------- FIKS DETTE! DU VET IKKE ALLTID SIGMA ----------------------- """
-    # cov_matrix = sigma**2 * np.linalg.pinv(Vt.transpose() @ np.diag(Sigma) @ np.diag(Sigma) @ Vt) 
-    # betas_variance = np.diag(cov_matrix)
-    betas_variance = 0
+    """ ----------------------- VET VI ALLTID SIGMA? ----------------------- """
+    cov_matrix = np.linalg.pinv(Vt.transpose() @ np.diag(Sigma) @ np.diag(Sigma) @ Vt)  # sigma = 1, N(0,1)
+    betas_variance = np.diag(cov_matrix)
 
     return betas, betas_variance
-
 
 
 
@@ -229,6 +225,7 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
     # Calculate predicted values using all data (X)
     z_tilde = X @ svd_algorithm(X, z_)[0]
 
+    # get the correct shape to plot 3D figures
     m = np.shape(z)[0]
     n = np.shape(z)[1]
 
@@ -252,7 +249,7 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
 
     plt.show()
 
-    # Plots of the surfaces.
+    # Plot the surfaces
     fig = plt.figure(figsize=plt.figaspect(0.5), constrained_layout=True)
     ax1 = fig.add_subplot(1, 2, 1, projection='3d')
     ax2 = fig.add_subplot(1, 2, 2, projection='3d')
@@ -270,37 +267,37 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
     ax2.set_title("OLS fit")
     fig.colorbar(surf, shrink=0.5, aspect=10)
 
-    # Plot of the MSEs
+    # Plot MSE
     x_axis = np.linspace(startdeg, polydeg, polydeg-startdeg+1)
     plt.figure(figsize=(6, 4))
-    plt.plot(x_axis, MSE_train, label="Training Sample")
-    plt.plot(x_axis, MSE_test, label="Test Sample")
+    plt.plot(x_axis, np.log10(MSE_train), label="Training Sample")
+    plt.plot(x_axis, np.log10(MSE_test), label="Test Sample")
     plt.title("MSE vs Complexity")
     plt.xlabel("Model Complexity")
     plt.ylabel("Mean Square Error")
     plt.legend()
 
-    # Plot of Bias-Variance of test data
+    # Plot the Bias-Variance of test data
     plt.figure(figsize=(6, 4))
-    plt.plot(x_axis, MSE_test, label="MSE")
-    plt.plot(x_axis, bias, '--', label="Bias")
-    plt.plot(x_axis, vari, '--', label="Variance")
-    plt.plot(x_axis, bias+vari, '--', label="sum")
+    plt.plot(x_axis, np.log10(MSE_test), label="MSE")
+    plt.plot(x_axis, np.log10(bias), '--', label="Bias")
+    plt.plot(x_axis, np.log10(vari), '--', label="Variance")
+    plt.plot(x_axis, np.log10(bias+vari), '--', label="sum")
     plt.title("Bias-Variance trade off")
     plt.xlabel("Model Complexity")
     plt.ylabel("Error")
     plt.legend()
 
-    # Plot of the R2 scores
+    # Plot the R2 scores
     plt.figure(figsize=(6, 4))
-    plt.plot(x_axis, R2_train, label="Training Sample")
-    plt.plot(x_axis, R2_test, label="Test Sample")
+    plt.plot(x_axis, np.log10(R2_train), label="Training Sample")
+    plt.plot(x_axis, np.log10(R2_test), label="Test Sample")
     plt.title("R2 score vs Complexity")
     plt.xlabel("Model Complexity")
     plt.ylabel("R2 score")
     plt.legend()
 
-    # Plotting paramaters and variance against terms
+    # Plot paramaters and variance against terms
     plt.figure(figsize=(6, 4))
     for i in range(len(collected_betas)):
         plt.errorbar(range(1, len(collected_betas[i])+1), collected_betas[i].flatten(
