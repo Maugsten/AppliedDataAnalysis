@@ -17,10 +17,17 @@ if __name__ == "__main__":
     # Franke function with stochastic noise
     z = FrankeFunction(x, y) + np.random.normal(0, sigma, x.shape)
 
-    # Preform regression
-    ordinary_least_squares(x, y, z, polydeg=5, resampling='None')
+    # Preform OLS regression
+    # ordinary_least_squares(x, y, z, polydeg=5, resampling='None')
     # ordinary_least_squares(x, y, z, polydeg=5, resampling='Bootstrap')
     # ordinary_least_squares(x, y, z, polydeg=5, resampling='CrossValidation')
+
+    # Preform Ridge regression
+    lmd = .1
+    # ridge(x, y, z, lmd, polydeg=5, resampling='None')
+    # ridge(x, y, z, lmd, polydeg=5, resampling='Bootstrap')
+    # ridge(x, y, z, lmd, polydeg=5, resampling='CrossValidation')
+
 
     """
     Terminal>>>python filename.py
