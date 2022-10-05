@@ -5,6 +5,7 @@ from sklearn import linear_model
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, Normalizer
 from sklearn.model_selection import KFold 
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
@@ -94,7 +95,7 @@ def ridge_solver(X, z, lmd):
     XTX = X.transpose() @ X
     betas = np.linalg.pinv(XTX + lmd*np.eye(len(XTX))) @ X.transpose() @ z
 
-    """ ----------------------- FIKS DETTE! DU VET IKKE ALLTID SIGMA ----------------------- """
+    """ ----------------------- FIKS DETTE! ----------------------- """
     betas_variance = 0
 
     return betas, betas_variance
@@ -118,7 +119,7 @@ def LASSO_solver(X, z, lmd):
     # print(np.shape(betas))
     # MSELassoPredict[i] = MSE(y,ypredictLasso)
 
-    """ ----------------------- FIKS DETTE! DU VET IKKE ALLTID SIGMA ----------------------- """
+    """ ----------------------- FIKS DETTE! ----------------------- """
     betas_variance = 0
 
     return betas, betas_variance
@@ -173,8 +174,8 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
     # Plot MSE
     x_axis = np.linspace(startdeg, polydeg, polydeg-startdeg+1)
     plt.figure(figsize=(6, 4))
-    plt.plot(x_axis, np.log10(MSE_train), label="Training Sample")
-    plt.plot(x_axis, np.log10(MSE_test), label="Test Sample")
+    plt.plot(x_axis, MSE_train, label="Training Sample")
+    plt.plot(x_axis, MSE_test, label="Test Sample")
     plt.title("MSE vs Complexity")
     plt.xlabel("Model Complexity")
     plt.ylabel("Mean Square Error")
@@ -182,8 +183,8 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
 
     # Plot the R2 scores
     plt.figure(figsize=(6, 4))
-    plt.plot(x_axis, np.log10(R2_train), label="Training Sample")
-    plt.plot(x_axis, np.log10(R2_test), label="Test Sample")
+    plt.plot(x_axis, R2_train, label="Training Sample")
+    plt.plot(x_axis, R2_test, label="Test Sample")
     plt.title("R2 score vs Complexity")
     plt.xlabel("Model Complexity")
     plt.ylabel("R2 score")
@@ -238,6 +239,8 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
     bias = np.zeros(polydeg-startdeg+1)
     vari = np.zeros(polydeg-startdeg+1)
 
+    sklearn_cv_mse = []
+
     # Loop for OLS with increasing order of polynomial fit
     for i in range(startdeg, polydeg+1):
 
@@ -262,16 +265,16 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
                 z_train_btstrp = z_train[indx]
 
                 # Calculate betas for this bootstrap
-                beta[:,j] = svd_algorithm(X_train_btstrp, z_train_btstrp)[0].flatten()  
+                # beta[:,j] = svd_algorithm(X_train_btstrp, z_train_btstrp)[0].flatten()  
 
                 b = svd_algorithm(X_train_btstrp, z_train_btstrp)[0]
                 z_tilde_train[:,j] = X_train @ b.flatten()
                 z_tilde_test[:,j] = X_test @ b.flatten()
 
             # Average parameters over the bootstraps
-            betas_averaged = np.mean(beta, axis=1)
-            betas = np.zeros((len(X_train[0]),1))  # prøv reshape her 
-            betas[:,0] = betas_averaged
+            # betas_averaged = np.mean(beta, axis=1)
+            # betas = np.zeros((len(X_train[0]),1))  # prøv reshape her 
+            # betas[:,0] = betas_averaged
 
             # Calculate variances of the parameters
             # betas_variance = np.var(beta, axis=1) 
@@ -284,12 +287,12 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_))**2)
         
         elif resampling == "CrossValidation":
-            k = 5
+            k = 10
 
             # Truncate z_ so to be able to divide into equally sized k folds
             floor = len(z_) // k
             z_cv = z_[:floor*k]
-            X_cv = X[:floor*k]
+            X_cv = X[:floor*k,:]
 
             shuffler = np.random.permutation(len(X_cv))
             X_shuffled = X_cv[shuffler]
@@ -318,19 +321,42 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
                 z_tilde_train[:,j] = X_train @ b.flatten()
                 z_tilde_test[:,j] = X_test @ b.flatten()
 
-                """ THIS IS WRONG, BUT ALLOW SCRIPT TO BE RUN """
-                betas = svd_algorithm(X_train, z_train)[0] 
+            MSE_train[i-startdeg] = np.mean(np.mean((z_train - z_tilde_train)**2, axis=1, keepdims=True))
+            MSE_test[i-startdeg] = np.mean(np.mean((z_test - z_tilde_test)**2, axis=1, keepdims=True))
+            bias[i-startdeg] = np.mean( (z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2 )        
+            vari[i-startdeg] = np.mean( np.var(z_tilde_test, axis=1, keepdims=True) )
+            R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_))**2)
+            R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_))**2)
 
-            MSE_train[i-startdeg] = np.mean(cv_MSE_train)
-            MSE_test[i-startdeg] = np.mean(cv_MSE_test)
-            R2_train[i-startdeg] = np.mean(cv_R2_train)
-            R2_train[i-startdeg] = np.mean(cv_R2_test)
-            bias[i-startdeg] = np.mean(cv_bias)
-            vari[i-startdeg] = np.mean(cv_vari)
+            kf = KFold(n_splits=10, random_state=None)
+            model = LinearRegression() 
+            mse_score = [] 
+            for train_index , test_index in kf.split(X):
+                X_train , X_test = X[train_index,:],X[test_index,:]
+                y_train , y_test = z_[train_index] , z_[test_index]
+                
+                model.fit(X_train,y_train)
+                pred_values = model.predict(X_test)
+                
+                mse = mean_squared_error(pred_values , y_test)
+                mse_score.append(mse)
+
+            avg_mse_score = sum(mse_score)/k
+            sklearn_cv_mse.append(avg_mse_score)
+
+            # print('accuracy of each fold - {}'.format(acc_score))
+            print('Avg accuracy {}: {}'.format(i, avg_mse_score))
             
         else:
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
+
+            # scaler = StandardScaler()
+            # scaler.fit(X_train)
+            # X_train_scaled = scaler.transform(X_train)
+            # X_test_scaled = scaler.transform(X_test)
+            # print(np.shape(X_train))
+            # print(np.shape(X_train_scaled))
         
             # OLS with SVD
             betas = svd_algorithm(X_train, z_train)[0]
@@ -351,25 +377,13 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
     # Calculate predicted values using all data (X)
     z_tilde = X @ svd_algorithm(X, z_)[0]
 
-    make_plots(x,y,z,z_,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
-
-    kf = KFold(n_splits=5, random_state=None)
-    model = LinearRegression()  
-    for train_index , test_index in kf.split(X):
-        X_train , X_test = X[train_index,:],X[test_index,:]
-        y_train , y_test = z_[train_index] , z_[test_index]
-        
-        model.fit(X_train,y_train)
-        pred_values = model.predict(X_test)
-        
-        acc = mean_squared_error(pred_values , y_test)
-        acc_score.append(acc)
-
-    avg_acc_score = sum(acc_score)/k
-
-    # print('accuracy of each fold - {}'.format(acc_score))
-    print('Avg accuracy {}: {}'.format(i, avg_acc_score))
-
+    plt.figure()
+    plt.plot(range(1,6), sklearn_cv_mse)
+    plt.xlabel('deg')
+    plt.ylabel('mse')
+    make_plots(x,y,z,z_,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=False)
+    
+    
 
 def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
     """
