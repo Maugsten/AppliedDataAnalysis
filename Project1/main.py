@@ -18,15 +18,9 @@ if __name__ == "__main__":
     z = FrankeFunction(x, y) + np.random.normal(0, sigma, x.shape)
 
     # Preform OLS regression
-<<<<<<< HEAD
-    # ordinary_least_squares(x, y, z, polydeg=5, resampling='None')
-    # ordinary_least_squares(x, y, z, polydeg=15, resampling='Bootstrap')
-    # ordinary_least_squares(x, y, z, polydeg=5, resampling='CrossValidation')
-=======
     # ordinary_least_squares(x, y, z, polydeg=8, resampling='None')
     # ordinary_least_squares(x, y, z, polydeg=8, resampling='Bootstrap')
     ordinary_least_squares(x, y, z, polydeg=8, resampling='CrossValidation')
->>>>>>> 933993e61af9eeecb8fe3b559d90fe6bf1fa3162
 
     # Preform Ridge regression
     # lmd = .1
