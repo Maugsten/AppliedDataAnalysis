@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     # Preform OLS regression
     # ordinary_least_squares(x, y, z, polydeg=5, resampling='None')
-    # ordinary_least_squares(x, y, z, polydeg=5, resampling='Bootstrap')
+    # ordinary_least_squares(x, y, z, polydeg=15, resampling='Bootstrap')
     # ordinary_least_squares(x, y, z, polydeg=5, resampling='CrossValidation')
 
     # Preform Ridge regression
