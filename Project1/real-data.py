@@ -26,7 +26,7 @@ x = np.linspace(0,len(terrain[1,:]),len(terrain[1,:]))
 y = np.linspace(0,len(terrain[:,1]),len(terrain[:,1]))
 x,y = np.meshgrid(x,y)
 
-polydeg=5
+polydeg=10
 # ordinary_least_squares(x,y,terrain,polydeg)
 ordinary_least_squares(x, y, terrain, polydeg, resampling='CrossValidation')
 
