@@ -164,12 +164,12 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
         surf1 = ax2.plot_surface(x, y, z_tilde_plot, cmap=cm.coolwarm,
                                 linewidth=0, antialiased=False)
 
-        ax1.set_zlim(-0.10, 1.40)
+        # ax1.set_zlim(-0.10, 1.40)
         ax1.zaxis.set_major_locator(LinearLocator(10))
         ax1.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
         ax1.set_title("Original data")
 
-        ax2.set_zlim(-0.10, 1.40)
+        # ax2.set_zlim(-0.10, 1.40)
         ax2.zaxis.set_major_locator(LinearLocator(10))
         ax2.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
         ax2.set_title("OLS fit")
@@ -178,30 +178,30 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
     # Plot MSE
     x_axis = np.linspace(startdeg, polydeg, polydeg-startdeg+1)
     plt.figure(figsize=(6, 4))
-    plt.plot(x_axis, MSE_train, label="Training Sample")
-    plt.plot(x_axis, MSE_test, label="Test Sample")
+    plt.plot(x_axis, MSE_train, '--.', label="Training Sample")
+    plt.plot(x_axis, MSE_test, '--.', label="Test Sample")
     plt.title("MSE vs Complexity")
-    plt.xlabel("Model Complexity")
+    plt.xlabel("Polynomial Degree")
     plt.ylabel("Mean Square Error")
     plt.legend()
 
     # Plot the R2 scores
     plt.figure(figsize=(6, 4))
-    plt.plot(x_axis, R2_train, label="Training Sample")
-    plt.plot(x_axis, R2_test, label="Test Sample")
+    plt.plot(x_axis, R2_train, '--.', label="Training Sample")
+    plt.plot(x_axis, R2_test, '--.', label="Test Sample")
     plt.title("R2 score vs Complexity")
-    plt.xlabel("Model Complexity")
+    plt.xlabel("Polynomial Degree")
     plt.ylabel("R2 score")
     plt.legend()
 
     # Plot the Bias-Variance of test data
     plt.figure(figsize=(6, 4))
-    plt.plot(x_axis, MSE_test, label="MSE")
-    plt.plot(x_axis, bias, '--', label="Bias")
-    plt.plot(x_axis, vari, '--', label="Variance")
-    plt.plot(x_axis, bias+vari, '--', label="sum")
+    plt.plot(x_axis, MSE_test, '--.', label="MSE")
+    plt.plot(x_axis, bias, '--.', label="Bias")
+    plt.plot(x_axis, vari, '--.', label="Variance")
+    # plt.plot(x_axis, bias+vari, '--', label="sum")
     plt.title("Bias-Variance trade off")
-    plt.xlabel("Model Complexity")
+    plt.xlabel("Polynomial Degree")
     plt.ylabel("Error")
     plt.legend()
 
@@ -385,7 +385,6 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
     z_tilde = X @ svd_algorithm(X, z_)[0]
     make_plots(x,y,z,z_,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
     
-    
 
 def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
     """
@@ -566,6 +565,10 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
     z_tilde = X @ ridge_solver(X, z_, lmd)[0]
     make_plots(x,y,z,z_,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
 
+    # f = open("data.txt", "a")
+    # f.write('\n')
+    # [f.write(str(MSE_test[i])+', ') for i in range(len(MSE_test))]
+    # f.close()
 
 def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
     """
