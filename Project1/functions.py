@@ -140,18 +140,20 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
     fig, (ax1, ax2, ax3) = plt.subplots(1,3, sharey=True) 
     im1 = ax1.imshow(z_plot, vmin=min_val, vmax=max_val)
     ax1.set_title("Original data")
-    ax1.set_xlabel("X")
-    ax1.set_ylabel("Y")
+    ax1.set_xlabel("nx")
+    ax1.set_ylabel("ny")
     fig.colorbar(im1, ax=ax1, location='bottom')
 
     im2 = ax2.imshow(z_tilde_plot, vmin=min_val, vmax=max_val)
     ax2.set_title("OLS fit")
-    ax2.set_xlabel("X")
-    ax2.set_ylabel("Y")
+    ax2.set_xlabel("nx")
+    ax2.set_ylabel("ny")
     fig.colorbar(im2, ax=ax2, location='bottom')
     
     im3 = ax3.imshow(z_tilde_plot - z_plot, vmin=min_val, vmax=max_val)
     ax3.set_title("Difference")
+    ax3.set_xlabel("nx")
+    ax3.set_ylabel("ny")
     fig.colorbar(im3, ax=ax3, location='bottom')
 
     if surface == True:
@@ -229,9 +231,11 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
 
     # Format data
     z_ = z.flatten().reshape(-1, 1)
-    # z_ = (z_ - np.mean(z_))/np.std(z_) """ Uncomment for standarization """
-    z_ = (z_ - np.min(z_))/(np.max(z_) - np.min(z_)) #""" Uncomment for normalization """
+    z_ = (z_ - np.mean(z_))/np.std(z_) #""" Uncomment for standarization """
+    # z_ = (z_ - np.min(z_))/(np.max(z_) - np.min(z_)) #""" Uncomment for normalization """
 
+    x = (x - np.min(x))/(np.max(x) - np.min(x))
+    y = (y - np.min(y))/(np.max(y) - np.min(y))
     # Set the first order of polynomials for design matrix to be looped from
     startdeg = 1
 
@@ -250,6 +254,7 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
 
         # Make design matrix
         X = create_X(x, y, i)
+        X = X[:,1:-1]
 
         if resampling == "Bootstrap":
             # Split into train and test data
