@@ -133,21 +133,24 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
     z_plot = z_.reshape((m,n))
     z_tilde_plot = z_tilde.reshape((m,n))
 
+    min_val = np.min(z_)
+    max_val = np.max(z_)
+
     # heatmaps
     fig, (ax1, ax2, ax3) = plt.subplots(1,3, sharey=True) 
-    im1 = ax1.imshow(z_plot)
+    im1 = ax1.imshow(z_plot, vmin=min_val, vmax=max_val)
     ax1.set_title("Original data")
     ax1.set_xlabel("X")
     ax1.set_ylabel("Y")
     fig.colorbar(im1, ax=ax1, location='bottom')
 
-    im2 = ax2.imshow(z_tilde_plot)
+    im2 = ax2.imshow(z_tilde_plot, vmin=min_val, vmax=max_val)
     ax2.set_title("OLS fit")
     ax2.set_xlabel("X")
     ax2.set_ylabel("Y")
     fig.colorbar(im2, ax=ax2, location='bottom')
     
-    im3 = ax3.imshow(z_tilde_plot - z_plot)
+    im3 = ax3.imshow(z_tilde_plot - z_plot, vmin=min_val, vmax=max_val)
     ax3.set_title("Difference")
     fig.colorbar(im3, ax=ax3, location='bottom')
 
