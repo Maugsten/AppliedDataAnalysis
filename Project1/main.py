@@ -5,7 +5,7 @@ from functions import *
 
 
 if __name__ == "__main__":
-    np.random.seed(1999)  # Set seed so results can be reproduced.
+    np.random.seed(1998)  # Set seed so results can be reproduced.
 
     # Define domain. No need to scale this data as it's already in the range (0,1)
     x = np.arange(0, 1, 0.05)
@@ -18,9 +18,9 @@ if __name__ == "__main__":
     z = FrankeFunction(x, y) + np.random.normal(0, sigma, x.shape)
 
     # Preform OLS regression
-    # ordinary_least_squares(x, y, z, polydeg=5, resampling='None')
-    # ordinary_least_squares(x, y, z, polydeg=6, resampling='Bootstrap')
-    ordinary_least_squares(x, y, z, polydeg=5, resampling='CrossValidation')
+    ordinary_least_squares(x, y, z, polydeg=5, resampling='None')
+    # ordinary_least_squares(x, y, z, polydeg=5, resampling='Bootstrap')
+    # ordinary_least_squares(x, y, z, polydeg=5, resampling='CrossValidation')
 
     # Preform Ridge regression
     # lmd = .1
@@ -35,8 +35,8 @@ if __name__ == "__main__":
     #     ridge(x, y, z, lmd, polydeg=8, resampling='CrossValidation')
 
     # Preform LASSO regression
-    # lmd = .1
-    # lasso(x, y, z, lmd, polydeg=20, resampling='None')
+    lmd = .00001
+    # lasso(x, y, z, lmd, polydeg=5, resampling='None')
     # lasso(x, y, z, lmd, polydeg=20, resampling='Bootstrap')
     # lasso(x, y, z, lmd, polydeg=20, resampling='CrossValidation')
 
