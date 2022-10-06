@@ -19,8 +19,8 @@ if __name__ == "__main__":
 
     # Preform OLS regression
     ordinary_least_squares(x, y, z, polydeg=5, resampling='None')
-    # ordinary_least_squares(x, y, z, polydeg=5, resampling='Bootstrap')
-    # ordinary_least_squares(x, y, z, polydeg=5, resampling='CrossValidation')
+    ordinary_least_squares(x, y, z, polydeg=5, resampling='Bootstrap')
+    ordinary_least_squares(x, y, z, polydeg=5, resampling='CrossValidation')
 
     # Preform Ridge regression
     # lmd = .1
@@ -30,15 +30,16 @@ if __name__ == "__main__":
     # lambdas = np.logspace(-4, 4, nlambdas)
     # for lmd in lambdas:
     #     print('\n Lambda:', lmd)
-    #     # ridge(x, y, z, lmd, polydeg=8, resampling='None')
-    #     # ridge(x, y, z, lmd, polydeg=8, resampling='Bootstrap')
-    #     ridge(x, y, z, lmd, polydeg=8, resampling='CrossValidation')
+    
+    lmd = .00001
+    ridge(x, y, z, lmd, polydeg=5, resampling='None')
+    ridge(x, y, z, lmd, polydeg=5, resampling='Bootstrap')
+    ridge(x, y, z, lmd, polydeg=5, resampling='CrossValidation')
 
     # Preform LASSO regression
-    lmd = .00001
-    # lasso(x, y, z, lmd, polydeg=5, resampling='None')
-    # lasso(x, y, z, lmd, polydeg=20, resampling='Bootstrap')
-    # lasso(x, y, z, lmd, polydeg=20, resampling='CrossValidation')
+    lasso(x, y, z, lmd, polydeg=5, resampling='None')
+    lasso(x, y, z, lmd, polydeg=5, resampling='Bootstrap')
+    lasso(x, y, z, lmd, polydeg=5, resampling='CrossValidation')
 
 
     """
