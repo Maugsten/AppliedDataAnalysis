@@ -130,6 +130,9 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
     m = np.shape(z)[0]
     n = np.shape(z)[1]
 
+    x_scaled = (x - np.min(x))/(np.max(x) - np.min(x))
+    y_scaled = (y - np.min(y))/(np.max(y) - np.min(y))
+
     z_plot = z_.reshape((m,n))
     z_tilde_plot = z_tilde.reshape((m,n))
 
@@ -161,19 +164,27 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
         ax1 = fig.add_subplot(1, 2, 1, projection='3d')
         ax2 = fig.add_subplot(1, 2, 2, projection='3d')
 
-        surf = ax1.plot_surface(x, y, z_plot, cmap=cm.coolwarm,
+        surf = ax1.plot_surface(x_scaled, y_scaled, z_plot, cmap=cm.coolwarm,
                                 linewidth=0, antialiased=False)
-        surf1 = ax2.plot_surface(x, y, z_tilde_plot, cmap=cm.coolwarm,
+        surf1 = ax2.plot_surface(x_scaled, y_scaled, z_tilde_plot, cmap=cm.coolwarm,
                                 linewidth=0, antialiased=False)
 
         # ax1.set_zlim(-0.10, 1.40)
         ax1.zaxis.set_major_locator(LinearLocator(10))
         ax1.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+        ax1.set_xlabel('x')
+        ax1.set_ylabel('y')
+        ax1.yaxis._axinfo['label']
+        ax1.set_zlabel('z')
         ax1.set_title("Original data")
 
         # ax2.set_zlim(-0.10, 1.40)
         ax2.zaxis.set_major_locator(LinearLocator(10))
         ax2.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+        ax2.set_xlabel('x')
+        ax2.set_ylabel('y')
+        ax2.yaxis._axinfo['label']
+        ax2.set_zlabel('z')
         ax2.set_title("OLS fit")
         fig.colorbar(surf, shrink=0.5, aspect=10)
 
@@ -323,6 +334,10 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
                 z_groups_reduced = np.delete(z_groups_copy, j, 0)
                 z_train = np.concatenate((z_groups_reduced), axis=0)
 
+                """
+                scale here
+                """
+
                 # OLS with SVD
                 b = svd_algorithm(X_train, z_train)[0].flatten()
                 
@@ -373,10 +388,13 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
 
             # scaling
-            X_test = X_test / np.amax(X_train)  # scaling with the largest value in X_train
-            X_train = X_train / np.amax(X_train)  # X_train now ranges from 0 to 1
+            # Normalization
+            X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))  # scaling with the largest value in X_train
+            X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # X_train now ranges from 0 to 1
+            # Standardization
             z_test = (z_test - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
             z_train = (z_train - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
+            z_scaled = (z_ - np.mean(z_))/np.std(z_)
         
             # OLS with SVD
             betas = svd_algorithm(X_train, z_train)[0]
@@ -391,17 +409,17 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             MSE_test[i-startdeg] = np.mean(np.mean((z_test - z_tilde_test)**2, axis=1, keepdims=True))
             bias[i-startdeg] = np.mean( (z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2 )        
             vari[i-startdeg] = np.mean( np.var(z_tilde_test, axis=1, keepdims=True) )
-            R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_))**2)
-            R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_))**2)
+            R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_scaled))**2) # z_?
+            R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_scaled))**2) # z_?
     
     # Calculate predicted values using all data (X)
-    z_tilde = X @ svd_algorithm(X, z_)[0]
-    # make_plots(x,y,z,z_,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
+    z_tilde = X @ svd_algorithm(X, z_scaled)[0]
+    make_plots(x,y,z,z_scaled,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
     
-    f = open("data.txt", "a")
-    f.write('\n')
-    [f.write(str(MSE_test[i])+', ') for i in range(len(MSE_test))]
-    f.close()
+    # f = open("data.txt", "a")
+    # f.write('\n')
+    # [f.write(str(MSE_test[i])+', ') for i in range(len(MSE_test))]
+    # f.close()
 
 def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
     """

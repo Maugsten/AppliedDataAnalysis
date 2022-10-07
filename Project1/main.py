@@ -10,7 +10,7 @@ if __name__ == "__main__":
     # Define domain. No need to scale this data as it's already in the range (0,1)
     x = np.arange(0, 1, 0.05)
     y = np.arange(0, 1, 0.05)
-    x, y = np.meshgrid(x, y)
+    x, y = np.meshgrid(x, y) 
 
     sigma = .1  # Standard deviation of the noise
     
