@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 from sklearn.model_selection import train_test_split
 from sklearn import linear_model
 from matplotlib import cm
@@ -164,12 +165,12 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
         ax1 = fig.add_subplot(1, 2, 1, projection='3d')
         ax2 = fig.add_subplot(1, 2, 2, projection='3d')
 
-        surf = ax1.plot_surface(x_scaled, y_scaled, z_plot, cmap=cm.coolwarm,
+        surf1 = ax1.plot_surface(x_scaled, y_scaled, z_plot, cmap=cm.coolwarm,
                                 linewidth=0, antialiased=False)
-        surf1 = ax2.plot_surface(x_scaled, y_scaled, z_tilde_plot, cmap=cm.coolwarm,
+        surf2 = ax2.plot_surface(x_scaled, y_scaled, z_tilde_plot, cmap=cm.coolwarm,
                                 linewidth=0, antialiased=False)
 
-        # ax1.set_zlim(-0.10, 1.40)
+        ax1.set_zlim(min_val, max_val)
         ax1.zaxis.set_major_locator(LinearLocator(10))
         ax1.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
         ax1.set_xlabel('x')
@@ -178,7 +179,7 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
         ax1.set_zlabel('z')
         ax1.set_title("Original data")
 
-        # ax2.set_zlim(-0.10, 1.40)
+        ax2.set_zlim(min_val, max_val)
         ax2.zaxis.set_major_locator(LinearLocator(10))
         ax2.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
         ax2.set_xlabel('x')
@@ -186,13 +187,13 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
         ax2.yaxis._axinfo['label']
         ax2.set_zlabel('z')
         ax2.set_title("OLS fit")
-        fig.colorbar(surf, shrink=0.5, aspect=10)
+        fig.colorbar(surf1, shrink=0.5, aspect=10)
 
     # Plot MSE
     x_axis = np.linspace(startdeg, polydeg, polydeg-startdeg+1)
     plt.figure(figsize=(6, 4))
-    plt.plot(x_axis, MSE_train, '--.', label="Training Sample")
-    plt.plot(x_axis, MSE_test, '--.', label="Test Sample")
+    plt.plot(x_axis, MSE_train, '--.', label="Training Data")
+    plt.plot(x_axis, MSE_test, '--.', label="Test Data")
     plt.title("MSE vs Complexity")
     plt.xlabel("Polynomial Degree")
     plt.ylabel("Mean Square Error")
@@ -200,8 +201,8 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
 
     # Plot the R2 scores
     plt.figure(figsize=(6, 4))
-    plt.plot(x_axis, R2_train, '--.', label="Training Sample")
-    plt.plot(x_axis, R2_test, '--.', label="Test Sample")
+    plt.plot(x_axis, R2_train, '--.', label="Training Data")
+    plt.plot(x_axis, R2_test, '--.', label="Test Data")
     plt.title("R2 score vs Complexity")
     plt.xlabel("Polynomial Degree")
     plt.ylabel("R2 score")
@@ -267,14 +268,13 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
 
-            # scaling
-            X_test = X_test / np.amax(X_train)  # scaling with the largest value in X_train
-            X_train = X_train / np.amax(X_train)  # X_train now ranges from 0 to 1
-            z_test = (z_test - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
-            z_train = (z_train - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
+            # scaling 
+            X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
+            X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+            z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
+            z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
             
             n_bootstraps = 100
-            beta = np.zeros((len(X_train[0]), n_bootstraps)) 
 
             z_tilde_train = np.zeros((len(X_train), n_bootstraps)) 
             z_tilde_test = np.zeros((len(X_test), n_bootstraps)) 
@@ -294,8 +294,8 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             MSE_test[i-startdeg] = np.mean(np.mean((z_test - z_tilde_test)**2, axis=1, keepdims=True))
             bias[i-startdeg] = np.mean((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)        
             vari[i-startdeg] = np.mean(np.var(z_tilde_test, axis=1, keepdims=True))
-            R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_))**2)
-            R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_))**2)
+            R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_train))**2)
+            R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_test))**2)
         
         elif resampling == "CrossValidation":
             k = 10
@@ -334,9 +334,11 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
                 z_groups_reduced = np.delete(z_groups_copy, j, 0)
                 z_train = np.concatenate((z_groups_reduced), axis=0)
 
-                """
-                scale here
-                """
+                # scaling 
+                X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
+                X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+                z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
+                z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
 
                 # OLS with SVD
                 b = svd_algorithm(X_train, z_train)[0].flatten()
@@ -387,14 +389,11 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
 
-            # scaling
-            # Normalization
-            X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))  # scaling with the largest value in X_train
-            X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # X_train now ranges from 0 to 1
-            # Standardization
-            z_test = (z_test - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
-            z_train = (z_train - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
-            z_scaled = (z_ - np.mean(z_))/np.std(z_)
+            # scaling 
+            X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
+            X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+            z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
+            z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
         
             # OLS with SVD
             betas = svd_algorithm(X_train, z_train)[0]
@@ -409,17 +408,19 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             MSE_test[i-startdeg] = np.mean(np.mean((z_test - z_tilde_test)**2, axis=1, keepdims=True))
             bias[i-startdeg] = np.mean( (z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2 )        
             vari[i-startdeg] = np.mean( np.var(z_tilde_test, axis=1, keepdims=True) )
-            R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_scaled))**2) # z_?
-            R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_scaled))**2) # z_?
+            R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_train))**2) # z_?
+            R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_test))**2) # z_?
     
     # Calculate predicted values using all data (X)
+    z_scaled = (z_ - np.mean(z_))/np.std(z_)
     z_tilde = X @ svd_algorithm(X, z_scaled)[0]
     make_plots(x,y,z,z_scaled,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
     
-    # f = open("data.txt", "a")
-    # f.write('\n')
+    # f = open("bootstrap.txt", "a")
     # [f.write(str(MSE_test[i])+', ') for i in range(len(MSE_test))]
+    # f.write('0')
     # f.close()
+
 
 def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
     """
@@ -442,9 +443,9 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
         Plots
     """
 
-   # Format data
+    # Format data
     z_ = z.flatten().reshape(-1, 1)
-   
+
     # Set the first order of polynomials for design matrix to be looped from
     startdeg = 1
 
@@ -463,19 +464,19 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
 
         # Make design matrix
         X = create_X(x, y, i)
+        X = X[:,1:-1]
 
         if resampling == "Bootstrap":
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
 
-            # scaling
-            X_test = X_test / np.amax(X_train)  # scaling with the largest value in X_train
-            X_train = X_train / np.amax(X_train)  # X_train now ranges from 0 to 1
-            z_test = (z_test - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
-            z_train = (z_train - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
+            # scaling 
+            X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
+            X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+            z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
+            z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
             
             n_bootstraps = 100
-            beta = np.zeros((len(X_train[0]), n_bootstraps)) 
 
             z_tilde_train = np.zeros((len(X_train), n_bootstraps)) 
             z_tilde_test = np.zeros((len(X_test), n_bootstraps)) 
@@ -495,8 +496,8 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
             MSE_test[i-startdeg] = np.mean(np.mean((z_test - z_tilde_test)**2, axis=1, keepdims=True))
             bias[i-startdeg] = np.mean((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)        
             vari[i-startdeg] = np.mean(np.var(z_tilde_test, axis=1, keepdims=True))
-            R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_))**2)
-            R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_))**2)
+            R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_train))**2)
+            R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_test))**2)
         
         elif resampling == "CrossValidation":
             k = 10
@@ -522,7 +523,7 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
             r2_test = []
             bia = []
             var = []
-            
+
             for j in range(k):                
                 X_test = X_groups[j] # Picks j'th matrix as test matrix
                 X_groups_copy = X_groups # Makes copy of the groups, to not mess up later
@@ -534,6 +535,12 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
                 z_groups_copy = z_groups 
                 z_groups_reduced = np.delete(z_groups_copy, j, 0)
                 z_train = np.concatenate((z_groups_reduced), axis=0)
+
+                # scaling 
+                X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
+                X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+                z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
+                z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
 
                 # OLS with SVD
                 b = ridge_solver(X_train, z_train, lmd)[0].flatten()
@@ -584,11 +591,11 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
 
-            # scaling
-            X_test = X_test / np.amax(X_train)  # scaling with the largest value in X_train
-            X_train = X_train / np.amax(X_train)  # X_train now ranges from 0 to 1
-            z_test = (z_test - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
-            z_train = (z_train - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
+            # scaling 
+            X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
+            X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+            z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
+            z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
         
             # OLS with SVD
             betas = ridge_solver(X_train, z_train, lmd)[0]
@@ -603,13 +610,19 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
             MSE_test[i-startdeg] = np.mean(np.mean((z_test - z_tilde_test)**2, axis=1, keepdims=True))
             bias[i-startdeg] = np.mean( (z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2 )        
             vari[i-startdeg] = np.mean( np.var(z_tilde_test, axis=1, keepdims=True) )
-            R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_))**2)
-            R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_))**2)
+            R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_train))**2) # z_?
+            R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_test))**2) # z_?
     
     # Calculate predicted values using all data (X)
-    z_tilde = X @ ridge_solver(X, z_, lmd)[0]
-    make_plots(x,y,z,z_,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
+    z_scaled = (z_ - np.mean(z_))/np.std(z_)
+    z_tilde = X @ ridge_solver(X, z_scaled, lmd)[0]
+    # make_plots(x,y,z,z_scaled,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
+    return MSE_test
 
+    # f = open("bootstrap.txt", "a")
+    # [f.write(str(MSE_test[i])+', ') for i in range(len(MSE_test))]
+    # f.write('0')
+    # f.close()
 
 def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
     """
@@ -632,7 +645,7 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
     """
     # Format data
     z_ = z.flatten().reshape(-1, 1)
-   
+
     # Set the first order of polynomials for design matrix to be looped from
     startdeg = 1
 
@@ -651,19 +664,19 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
 
         # Make design matrix
         X = create_X(x, y, i)
+        X = X[:,1:-1]
 
         if resampling == "Bootstrap":
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
 
-            # scaling
-            X_test = X_test / np.amax(X_train)  # scaling with the largest value in X_train
-            X_train = X_train / np.amax(X_train)  # X_train now ranges from 0 to 1
-            z_test = (z_test - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
-            z_train = (z_train - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
+            # scaling 
+            X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
+            X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+            z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
+            z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
             
             n_bootstraps = 100
-            beta = np.zeros((len(X_train[0]), n_bootstraps)) 
 
             z_tilde_train = np.zeros((len(X_train), n_bootstraps)) 
             z_tilde_test = np.zeros((len(X_test), n_bootstraps)) 
@@ -683,8 +696,8 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
             MSE_test[i-startdeg] = np.mean(np.mean((z_test - z_tilde_test)**2, axis=1, keepdims=True))
             bias[i-startdeg] = np.mean((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)        
             vari[i-startdeg] = np.mean(np.var(z_tilde_test, axis=1, keepdims=True))
-            R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_))**2)
-            R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_))**2)
+            R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_train))**2)
+            R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_test))**2)
         
         elif resampling == "CrossValidation":
             k = 10
@@ -710,7 +723,7 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
             r2_test = []
             bia = []
             var = []
-            
+
             for j in range(k):                
                 X_test = X_groups[j] # Picks j'th matrix as test matrix
                 X_groups_copy = X_groups # Makes copy of the groups, to not mess up later
@@ -722,6 +735,12 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
                 z_groups_copy = z_groups 
                 z_groups_reduced = np.delete(z_groups_copy, j, 0)
                 z_train = np.concatenate((z_groups_reduced), axis=0)
+
+                # scaling 
+                X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
+                X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+                z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
+                z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
 
                 # OLS with SVD
                 b = LASSO_solver(X_train, z_train, lmd)[0].flatten()
@@ -772,11 +791,11 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
 
-            # scaling
-            X_test = X_test / np.amax(X_train)  # scaling with the largest value in X_train
-            X_train = X_train / np.amax(X_train)  # X_train now ranges from 0 to 1
-            z_test = (z_test - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
-            z_train = (z_train - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
+            # scaling 
+            X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
+            X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+            z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
+            z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
         
             # OLS with SVD
             betas = LASSO_solver(X_train, z_train, lmd)[0]
@@ -791,9 +810,15 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
             MSE_test[i-startdeg] = np.mean(np.mean((z_test - z_tilde_test)**2, axis=1, keepdims=True))
             bias[i-startdeg] = np.mean( (z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2 )        
             vari[i-startdeg] = np.mean( np.var(z_tilde_test, axis=1, keepdims=True) )
-            R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_))**2)
-            R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_))**2)
+            R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_train))**2) # z_?
+            R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_test))**2) # z_?
     
     # Calculate predicted values using all data (X)
-    z_tilde = X @ LASSO_solver(X, z_, lmd)[0]
-    make_plots(x,y,z,z_,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
+    z_scaled = (z_ - np.mean(z_))/np.std(z_)
+    z_tilde = X @ LASSO_solver(X, z_scaled, lmd)[0]
+    # make_plots(x,y,z,z_scaled,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
+    return MSE_test
+    # f = open("bootstrap.txt", "a")
+    # [f.write(str(MSE_test[i])+', ') for i in range(len(MSE_test))]
+    # f.write('0')
+    # f.close()
