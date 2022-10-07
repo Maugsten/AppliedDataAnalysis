@@ -10,8 +10,8 @@ from random import random, seed
 
 # load the terrain data
 terrain = imread('SRTM_data_Norway_2.tif')
-terrain = terrain[::100, ::100] / np.amax(terrain)
-np.random.seed(1999)
+terrain = terrain[::200, ::200] 
+# np.random.seed(1999)
 
 # # plot the terrain
 # plt.figure()
@@ -28,5 +28,25 @@ x,y = np.meshgrid(x,y)
 
 polydeg=10
 # ordinary_least_squares(x,y,terrain,polydeg)
-ordinary_least_squares(x, y, terrain, polydeg, resampling='CrossValidation')
+# ordinary_least_squares(x, y, terrain, polydeg, resampling='CrossValidation')
+
+l=[]
+with open('data.txt', 'r') as f:
+    l = [[float(num) for num in line.split(',')] for line in f]
+l = np.array(l)[0]
+boot = l[:10]
+k5 = l[10:20]
+k10 = l[20:]
+
+# Plot MSE
+x_axis = range(1,10+1)
+plt.figure(figsize=(6, 4))
+plt.plot(x_axis, boot, '--.', label="Bootstrap")
+plt.plot(x_axis, k5, '--.', label="5-Fold Cross-Validation")
+plt.plot(x_axis, k10, '--.', label="10-Fold Cross-Validation")
+plt.title("MSE vs Complexity")
+plt.xlabel("Polynomial Degree")
+plt.ylabel("Mean Square Error")
+plt.legend()
+plt.show()
 

@@ -388,8 +388,12 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
     
     # Calculate predicted values using all data (X)
     z_tilde = X @ svd_algorithm(X, z_)[0]
-    make_plots(x,y,z,z_,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
+    # make_plots(x,y,z,z_,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
     
+    f = open("data.txt", "a")
+    f.write('\n')
+    [f.write(str(MSE_test[i])+', ') for i in range(len(MSE_test))]
+    f.close()
 
 def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
     """
@@ -570,10 +574,6 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
     z_tilde = X @ ridge_solver(X, z_, lmd)[0]
     make_plots(x,y,z,z_,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
 
-    # f = open("data.txt", "a")
-    # f.write('\n')
-    # [f.write(str(MSE_test[i])+', ') for i in range(len(MSE_test))]
-    # f.close()
 
 def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
     """
