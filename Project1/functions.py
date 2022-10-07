@@ -198,13 +198,13 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
 
     # Plot the Bias-Variance of test data
     plt.figure(figsize=(6, 4))
-    plt.plot(x_axis, MSE_test, '--.', label="MSE")
-    plt.plot(x_axis, bias, '--.', label="Bias")
-    plt.plot(x_axis, vari, '--.', label="Variance")
+    plt.plot(x_axis, np.log10(MSE_test), '--.', label="MSE")
+    plt.plot(x_axis, np.log10(bias), '--.', label="Bias")
+    plt.plot(x_axis, np.log10(vari), '--.', label="Variance")
     # plt.plot(x_axis, bias+vari, '--', label="sum")
     plt.title("Bias-Variance trade off")
     plt.xlabel("Polynomial Degree")
-    plt.ylabel("Error")
+    plt.ylabel("log10(Error)")
     plt.legend()
 
     plt.show()
@@ -231,11 +231,7 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
 
     # Format data
     z_ = z.flatten().reshape(-1, 1)
-    z_ = (z_ - np.mean(z_))/np.std(z_) #""" Uncomment for standarization """
-    # z_ = (z_ - np.min(z_))/(np.max(z_) - np.min(z_)) #""" Uncomment for normalization """
 
-    x = (x - np.min(x))/(np.max(x) - np.min(x))
-    y = (y - np.min(y))/(np.max(y) - np.min(y))
     # Set the first order of polynomials for design matrix to be looped from
     startdeg = 1
 
@@ -259,6 +255,12 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
         if resampling == "Bootstrap":
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
+
+            # scaling
+            X_test = X_test / np.amax(X_train)  # scaling with the largest value in X_train
+            X_train = X_train / np.amax(X_train)  # X_train now ranges from 0 to 1
+            z_test = (z_test - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
+            z_train = (z_train - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
             
             n_bootstraps = 100
             beta = np.zeros((len(X_train[0]), n_bootstraps)) 
@@ -369,6 +371,12 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
         else:
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
+
+            # scaling
+            X_test = X_test / np.amax(X_train)  # scaling with the largest value in X_train
+            X_train = X_train / np.amax(X_train)  # X_train now ranges from 0 to 1
+            z_test = (z_test - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
+            z_train = (z_train - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
         
             # OLS with SVD
             betas = svd_algorithm(X_train, z_train)[0]
@@ -416,11 +424,9 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
         Plots
     """
 
-    # Format data
+   # Format data
     z_ = z.flatten().reshape(-1, 1)
-    # z_ = (z_ - np.mean(z_))/np.std(z_) """ Uncomment for standarization """
-    z_ = (z_ - np.min(z_))/(np.max(z_) - np.min(z_)) #""" Uncomment for normalization """
-
+   
     # Set the first order of polynomials for design matrix to be looped from
     startdeg = 1
 
@@ -443,6 +449,12 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
         if resampling == "Bootstrap":
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
+
+            # scaling
+            X_test = X_test / np.amax(X_train)  # scaling with the largest value in X_train
+            X_train = X_train / np.amax(X_train)  # X_train now ranges from 0 to 1
+            z_test = (z_test - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
+            z_train = (z_train - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
             
             n_bootstraps = 100
             beta = np.zeros((len(X_train[0]), n_bootstraps)) 
@@ -553,6 +565,12 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
         else:
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
+
+            # scaling
+            X_test = X_test / np.amax(X_train)  # scaling with the largest value in X_train
+            X_train = X_train / np.amax(X_train)  # X_train now ranges from 0 to 1
+            z_test = (z_test - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
+            z_train = (z_train - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
         
             # OLS with SVD
             betas = ridge_solver(X_train, z_train, lmd)[0]
@@ -596,9 +614,7 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
     """
     # Format data
     z_ = z.flatten().reshape(-1, 1)
-    # z_ = (z_ - np.mean(z_))/np.std(z_) """ Uncomment for standarization """
-    z_ = (z_ - np.min(z_))/(np.max(z_) - np.min(z_)) #""" Uncomment for normalization """
-
+   
     # Set the first order of polynomials for design matrix to be looped from
     startdeg = 1
 
@@ -621,6 +637,12 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
         if resampling == "Bootstrap":
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
+
+            # scaling
+            X_test = X_test / np.amax(X_train)  # scaling with the largest value in X_train
+            X_train = X_train / np.amax(X_train)  # X_train now ranges from 0 to 1
+            z_test = (z_test - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
+            z_train = (z_train - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
             
             n_bootstraps = 100
             beta = np.zeros((len(X_train[0]), n_bootstraps)) 
@@ -731,6 +753,12 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
         else:
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
+
+            # scaling
+            X_test = X_test / np.amax(X_train)  # scaling with the largest value in X_train
+            X_train = X_train / np.amax(X_train)  # X_train now ranges from 0 to 1
+            z_test = (z_test - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
+            z_train = (z_train - np.mean(z_train))/np.std(z_train)  # centering and making sure the variance = 1
         
             # OLS with SVD
             betas = LASSO_solver(X_train, z_train, lmd)[0]
