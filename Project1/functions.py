@@ -116,7 +116,6 @@ def LASSO_solver(X, z, lmd):
     RegLasso.fit(X,z)
 
     betas = RegLasso.coef_.reshape(-1,1)
-    print(betas)
 
 
     """ ----------------------- FIKS DETTE! ----------------------- """
@@ -194,7 +193,7 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
     plt.figure(figsize=(6, 4))
     plt.plot(x_axis, MSE_train, '--.', label="Training Data")
     plt.plot(x_axis, MSE_test, '--.', label="Test Data")
-    plt.title("MSE vs Complexity")
+    plt.title("MSE against Complexity")
     plt.xlabel("Polynomial Degree")
     plt.ylabel("Mean Square Error")
     plt.legend()
@@ -203,7 +202,7 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
     plt.figure(figsize=(6, 4))
     plt.plot(x_axis, R2_train, '--.', label="Training Data")
     plt.plot(x_axis, R2_test, '--.', label="Test Data")
-    plt.title("R2 score vs Complexity")
+    plt.title("R2 score against Complexity")
     plt.xlabel("Polynomial Degree")
     plt.ylabel("R2 score")
     plt.legend()
@@ -214,14 +213,14 @@ def make_plots(x, y, z, z_, z_tilde, startdeg, polydeg, MSE_train, MSE_test, R2_
     plt.plot(x_axis, np.log10(bias), '--.', label="Bias")
     plt.plot(x_axis, np.log10(vari), '--.', label="Variance")
     # plt.plot(x_axis, bias+vari, '--', label="sum")
-    plt.title("Bias-Variance trade off")
+    plt.title("Bias-Variance Tradeoff")
     plt.xlabel("Polynomial Degree")
     plt.ylabel("log10(Error)")
     plt.legend()
 
     plt.show()
 
-def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
+def ordinary_least_squares(x, y, z, polydeg=5, startdeg=1, resampling='None', k=10):
     """
     Description:
         Preforms an ordinary least squares regression on the data z. 
@@ -244,9 +243,6 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
     # Format data
     z_ = z.flatten().reshape(-1, 1)
 
-    # Set the first order of polynomials for design matrix to be looped from
-    startdeg = 1
-
     # Make arrays for MSEs and R2 scores
     MSE_train = np.zeros(polydeg-startdeg+1)
     MSE_test = np.zeros(polydeg-startdeg+1)
@@ -257,20 +253,23 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
     bias = np.zeros(polydeg-startdeg+1)
     vari = np.zeros(polydeg-startdeg+1)
 
+    parameters = []
+
     # Loop for OLS with increasing order of polynomial fit
     for i in range(startdeg, polydeg+1):
 
         # Make design matrix
         X = create_X(x, y, i)
-        X = X[:,1:-1]
+        X = X[:,1:]
 
         if resampling == "Bootstrap":
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
 
             # scaling 
-            X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
-            X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+            for j in range(len(X_test[0,:])):
+                X_test[:,j] = (X_test[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j]))   # Normalization
+                X_train[:,j] = (X_train[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j])) # Normalization
             z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
             z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
             
@@ -296,10 +295,8 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             vari[i-startdeg] = np.mean(np.var(z_tilde_test, axis=1, keepdims=True))
             R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_train))**2)
             R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_test))**2)
-        
-        elif resampling == "CrossValidation":
-            k = 10
 
+        elif resampling == "CrossValidation":
             # Truncate z_ so to be able to divide into equally sized k folds
             floor = len(z_) // k
             z_cv = z_[:floor*k]
@@ -335,8 +332,9 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
                 z_train = np.concatenate((z_groups_reduced), axis=0)
 
                 # scaling 
-                X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
-                X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+                for f in range(len(X_test[0,:])):
+                    X_test[:,f] = (X_test[:,f] - np.amin(X_train[:,f])) / (np.amax(X_train[:,f]) - np.amin(X_train[:,f]))   # Normalization
+                    X_train[:,f] = (X_train[:,f] - np.amin(X_train[:,f])) / (np.amax(X_train[:,f]) - np.amin(X_train[:,f])) # Normalization
                 z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
                 z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
 
@@ -364,39 +362,21 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
             R2_test[i-startdeg] = np.mean(r2_test) 
             bias[i-startdeg] = np.mean(bia)        
             vari[i-startdeg] = np.mean(var)
-
-            # """ To check with sklearn """
-            # kf = KFold(n_splits=10, random_state=None)
-            # model = LinearRegression() 
-            # mse_score = [] 
-            # for train_index , test_index in kf.split(X):
-            #     X_train , X_test = X[train_index,:],X[test_index,:]
-            #     y_train , y_test = z_[train_index] , z_[test_index]
-                
-            #     model.fit(X_train,y_train)
-            #     pred_values = model.predict(X_test)
-                
-            #     mse = mean_squared_error(pred_values , y_test)
-            #     mse_score.append(mse)
-
-            # avg_mse_score = sum(mse_score)/k
-            # sklearn_cv_mse.append(avg_mse_score)
-
-            # # print('accuracy of each fold - {}'.format(acc_score))
-            # print('Avg accuracy {}: {}'.format(i, avg_mse_score))
             
         else:
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
 
             # scaling 
-            X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
-            X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+            for j in range(len(X_test[0,:])):
+                X_test[:,j] = (X_test[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j]))   # Normalization
+                X_train[:,j] = (X_train[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j])) # Normalization
             z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
             z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
         
             # OLS with SVD
             betas = svd_algorithm(X_train, z_train)[0]
+            parameters.append(betas)
 
             z_tilde_train = np.zeros((len(X_train), 1))
             z_tilde_test = np.zeros((len(X_test), 1))
@@ -414,15 +394,12 @@ def ordinary_least_squares(x, y, z, polydeg=5, resampling='None'):
     # Calculate predicted values using all data (X)
     z_scaled = (z_ - np.mean(z_))/np.std(z_)
     z_tilde = X @ svd_algorithm(X, z_scaled)[0]
+
     make_plots(x,y,z,z_scaled,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
-    
-    # f = open("bootstrap.txt", "a")
-    # [f.write(str(MSE_test[i])+', ') for i in range(len(MSE_test))]
-    # f.write('0')
-    # f.close()
+    # return MSE_test, parameters
 
 
-def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
+def ridge(x, y, z, lmd, polydeg=5, startdeg=1, resampling='None'):
     """
     Description:
         Preforms a Ridge regression on the data z. 
@@ -446,9 +423,6 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
     # Format data
     z_ = z.flatten().reshape(-1, 1)
 
-    # Set the first order of polynomials for design matrix to be looped from
-    startdeg = 1
-
     # Make arrays for MSEs and R2 scores
     MSE_train = np.zeros(polydeg-startdeg+1)
     MSE_test = np.zeros(polydeg-startdeg+1)
@@ -459,20 +433,23 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
     bias = np.zeros(polydeg-startdeg+1)
     vari = np.zeros(polydeg-startdeg+1)
 
+    parameters = []
+
     # Loop for OLS with increasing order of polynomial fit
     for i in range(startdeg, polydeg+1):
 
         # Make design matrix
         X = create_X(x, y, i)
-        X = X[:,1:-1]
+        X = X[:,1:]
 
         if resampling == "Bootstrap":
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
 
             # scaling 
-            X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
-            X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+            for j in range(len(X_test[0,:])):
+                X_test[:,j] = (X_test[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j]))   # Normalization
+                X_train[:,j] = (X_train[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j])) # Normalization
             z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
             z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
             
@@ -498,10 +475,8 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
             vari[i-startdeg] = np.mean(np.var(z_tilde_test, axis=1, keepdims=True))
             R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_train))**2)
             R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_test))**2)
-        
-        elif resampling == "CrossValidation":
-            k = 10
 
+        elif resampling == "CrossValidation":
             # Truncate z_ so to be able to divide into equally sized k folds
             floor = len(z_) // k
             z_cv = z_[:floor*k]
@@ -537,8 +512,9 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
                 z_train = np.concatenate((z_groups_reduced), axis=0)
 
                 # scaling 
-                X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
-                X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+                for f in range(len(X_test[0,:])):
+                    X_test[:,f] = (X_test[:,f] - np.amin(X_train[:,f])) / (np.amax(X_train[:,f]) - np.amin(X_train[:,f]))   # Normalization
+                    X_train[:,f] = (X_train[:,f] - np.amin(X_train[:,f])) / (np.amax(X_train[:,f]) - np.amin(X_train[:,f])) # Normalization
                 z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
                 z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
 
@@ -566,39 +542,21 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
             R2_test[i-startdeg] = np.mean(r2_test) 
             bias[i-startdeg] = np.mean(bia)        
             vari[i-startdeg] = np.mean(var)
-
-            # """ To check with sklearn """
-            # kf = KFold(n_splits=10, random_state=None)
-            # model = LinearRegression() 
-            # mse_score = [] 
-            # for train_index , test_index in kf.split(X):
-            #     X_train , X_test = X[train_index,:],X[test_index,:]
-            #     y_train , y_test = z_[train_index] , z_[test_index]
-                
-            #     model.fit(X_train,y_train)
-            #     pred_values = model.predict(X_test)
-                
-            #     mse = mean_squared_error(pred_values , y_test)
-            #     mse_score.append(mse)
-
-            # avg_mse_score = sum(mse_score)/k
-            # sklearn_cv_mse.append(avg_mse_score)
-
-            # # print('accuracy of each fold - {}'.format(acc_score))
-            # print('Avg accuracy {}: {}'.format(i, avg_mse_score))
             
         else:
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
 
             # scaling 
-            X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
-            X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+            for j in range(len(X_test[0,:])):
+                X_test[:,j] = (X_test[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j]))   # Normalization
+                X_train[:,j] = (X_train[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j])) # Normalization
             z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
             z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
         
             # OLS with SVD
             betas = ridge_solver(X_train, z_train, lmd)[0]
+            parameters.append(betas)
 
             z_tilde_train = np.zeros((len(X_train), 1))
             z_tilde_test = np.zeros((len(X_test), 1))
@@ -616,15 +574,11 @@ def ridge(x, y, z, lmd, polydeg=5, resampling='None'):
     # Calculate predicted values using all data (X)
     z_scaled = (z_ - np.mean(z_))/np.std(z_)
     z_tilde = X @ ridge_solver(X, z_scaled, lmd)[0]
-    # make_plots(x,y,z,z_scaled,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
-    return MSE_test
 
-    # f = open("bootstrap.txt", "a")
-    # [f.write(str(MSE_test[i])+', ') for i in range(len(MSE_test))]
-    # f.write('0')
-    # f.close()
+    make_plots(x,y,z,z_scaled,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
+    # return MSE_test, parameters
 
-def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
+def lasso(x, y, z, lmd, polydeg=5, startdeg=1, resampling='None'):
     """
     Description:
         Preforms the LASSO method on the data z. 
@@ -646,9 +600,6 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
     # Format data
     z_ = z.flatten().reshape(-1, 1)
 
-    # Set the first order of polynomials for design matrix to be looped from
-    startdeg = 1
-
     # Make arrays for MSEs and R2 scores
     MSE_train = np.zeros(polydeg-startdeg+1)
     MSE_test = np.zeros(polydeg-startdeg+1)
@@ -659,20 +610,23 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
     bias = np.zeros(polydeg-startdeg+1)
     vari = np.zeros(polydeg-startdeg+1)
 
+    parameters = []
+
     # Loop for OLS with increasing order of polynomial fit
     for i in range(startdeg, polydeg+1):
 
         # Make design matrix
         X = create_X(x, y, i)
-        X = X[:,1:-1]
+        X = X[:,1:]
 
         if resampling == "Bootstrap":
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
 
             # scaling 
-            X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
-            X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+            for j in range(len(X_test[0,:])):
+                X_test[:,j] = (X_test[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j]))   # Normalization
+                X_train[:,j] = (X_train[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j])) # Normalization
             z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
             z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
             
@@ -698,10 +652,8 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
             vari[i-startdeg] = np.mean(np.var(z_tilde_test, axis=1, keepdims=True))
             R2_train[i-startdeg] = 1 - np.sum((z_train - np.mean(z_tilde_train, axis=1, keepdims=True))**2)/np.sum((z_train - np.mean(z_train))**2)
             R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_test))**2)
-        
-        elif resampling == "CrossValidation":
-            k = 10
 
+        elif resampling == "CrossValidation":
             # Truncate z_ so to be able to divide into equally sized k folds
             floor = len(z_) // k
             z_cv = z_[:floor*k]
@@ -737,8 +689,9 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
                 z_train = np.concatenate((z_groups_reduced), axis=0)
 
                 # scaling 
-                X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
-                X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+                for f in range(len(X_test[0,:])):
+                    X_test[:,f] = (X_test[:,f] - np.amin(X_train[:,f])) / (np.amax(X_train[:,f]) - np.amin(X_train[:,f]))   # Normalization
+                    X_train[:,f] = (X_train[:,f] - np.amin(X_train[:,f])) / (np.amax(X_train[:,f]) - np.amin(X_train[:,f])) # Normalization
                 z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
                 z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
 
@@ -766,39 +719,21 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
             R2_test[i-startdeg] = np.mean(r2_test) 
             bias[i-startdeg] = np.mean(bia)        
             vari[i-startdeg] = np.mean(var)
-
-            # """ To check with sklearn """
-            # kf = KFold(n_splits=10, random_state=None)
-            # model = LinearRegression() 
-            # mse_score = [] 
-            # for train_index , test_index in kf.split(X):
-            #     X_train , X_test = X[train_index,:],X[test_index,:]
-            #     y_train , y_test = z_[train_index] , z_[test_index]
-                
-            #     model.fit(X_train,y_train)
-            #     pred_values = model.predict(X_test)
-                
-            #     mse = mean_squared_error(pred_values , y_test)
-            #     mse_score.append(mse)
-
-            # avg_mse_score = sum(mse_score)/k
-            # sklearn_cv_mse.append(avg_mse_score)
-
-            # # print('accuracy of each fold - {}'.format(acc_score))
-            # print('Avg accuracy {}: {}'.format(i, avg_mse_score))
             
         else:
             # Split into train and test data
             X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
 
             # scaling 
-            X_test = (X_test - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train))   # Normalization
-            X_train = (X_train - np.amin(X_train)) / (np.amax(X_train) - np.amin(X_train)) # Normalization
+            for j in range(len(X_test[0,:])):
+                X_test[:,j] = (X_test[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j]))   # Normalization
+                X_train[:,j] = (X_train[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j])) # Normalization
             z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
             z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
         
             # OLS with SVD
             betas = LASSO_solver(X_train, z_train, lmd)[0]
+            parameters.append(betas)
 
             z_tilde_train = np.zeros((len(X_train), 1))
             z_tilde_test = np.zeros((len(X_test), 1))
@@ -816,9 +751,6 @@ def lasso(x, y, z, lmd, polydeg=5, resampling='None'):
     # Calculate predicted values using all data (X)
     z_scaled = (z_ - np.mean(z_))/np.std(z_)
     z_tilde = X @ LASSO_solver(X, z_scaled, lmd)[0]
-    # make_plots(x,y,z,z_scaled,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
-    return MSE_test
-    # f = open("bootstrap.txt", "a")
-    # [f.write(str(MSE_test[i])+', ') for i in range(len(MSE_test))]
-    # f.write('0')
-    # f.close()
+
+    make_plots(x,y,z,z_scaled,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
+    # return MSE_test, parameters
