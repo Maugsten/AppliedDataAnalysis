@@ -1,4 +1,4 @@
 # Applied Data Analysis and Machine Learning
-## test 
-### test
-masse tekst
+## FYS-STK4155
+### Welcome to the repo!
+This is the github repository where our projects can be found. 
