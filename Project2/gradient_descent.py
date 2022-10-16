@@ -22,9 +22,12 @@ def gradient_descent_OLS(X, x, y, n):
     eta = 1.0/np.max(EigValues)
     beta = np.random.randn(2,1)
 
-    eps = 10**(-8)
-    gradient = (2.0/n) * X.T @ (X @ beta - y)
-    while gradient > eps:
+    # eps = 1  #10**(-8)
+    # gradient = (2.0/n) * X.T @ (X @ beta - y)
+    # while np.linalg.norm(gradient) > eps:
+    #     beta -= eta*gradient
+    for _ in range(1000):
+        gradient = (2.0/n) * X.T @ (X @ beta - y)
         beta -= eta*gradient
 
     print(beta)
@@ -65,20 +68,44 @@ def gradient_descent_ridge(X, x, y, n):
     beta_linreg = np.linalg.inv(XT_X + I) @ X.T @ y
     print(beta_linreg)
 
-def stochastic_gradient_descent():
-    pass
+def stochastic_gradient_descent(X, x, y, n):
+    
+    ### Numerical ###
+    theta = np.random.rand(2,1)
+    eta = 0.1
 
+    for _ in range(1000):
+        gradients = 2.0/n * X.T @ ((X @ theta) - y)
+        theta -= eta*gradients
+    print(theta)
 
-n = 100
+    ### Analytical ###
+    theta_linreg = np.linalg.inv(X.T @ X) @ (X.T @ y)
+    print(theta_linreg)
 
-x = 2*np.random.rand(n,1)
-y = 4+3*x+np.random.randn(n,1)
+    ### Scikit-learn ###
+    sgdreg = SGDRegressor(max_iter=50, penalty=None, eta0=0.1)
+    sgdreg.fit(x,y.ravel())
+    print(sgdreg.intercept_, sgdreg.coef_)
 
-X = np.c_[np.ones((n,1)), x]
+    # Stochastic part
+    n_epochs = 50
+    t0, t1 = 5, 50
+    def learning_schedule(t):
+        return t0/(t+t1)
 
-gradient_descent_OLS(X,x,y,n)
+    for epoch in range(n_epochs):
+        for i in range(n):
+            random_index = np.random.randint(n)
+            xi = X[random_index:random_index+1]
+            yi = y[random_index:random_index+1]
 
-if __name__ == "main":
+            gradients = 2 * xi.T @ ((xi @ theta) - yi)
+            eta = learning_schedule(epoch * n + i)
+            theta -= eta*gradients
+    print(theta)
+
+if __name__ == "__main__":
 
     ### check gradient descent ###
     n = 100
@@ -88,5 +115,5 @@ if __name__ == "main":
     
     X = np.c_[np.ones((n,1)), x]
 
-    gradient_descent_OLS(X,x,y,n)
+    stochastic_gradient_descent(X,x,y,n)
 
