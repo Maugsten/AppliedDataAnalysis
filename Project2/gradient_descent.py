@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.linear_model import SGDRegressor
 
 
-def gradient_descent_OLS(X, x, y, n):
+def gradient_descent_OLS(X, x, y, momentum=0):
     """
     Args:
         X (ndarray):
@@ -12,6 +12,7 @@ def gradient_descent_OLS(X, x, y, n):
         y (array):
             The data we want to fit.
     """
+    n = len(x)
     ### Numerical ###
     # Hessian matrix
     H = (2.0/n) * X.T @ X
@@ -19,16 +20,26 @@ def gradient_descent_OLS(X, x, y, n):
     # Eigenvalues
     EigValues = np.linalg.eig(H)[0]
 
-    eta = 1.0/np.max(EigValues)
-    beta = np.random.randn(2,1)
+    eta = 1.0/np.max(EigValues) # ett forslag til learning rate
+
+    beta = np.random.randn(len(X[0]),1) # initial guess for parameters
 
     # eps = 1  #10**(-8)
     # gradient = (2.0/n) * X.T @ (X @ beta - y)
     # while np.linalg.norm(gradient) > eps:
     #     beta -= eta*gradient
+
+    change = 0
     for _ in range(1000):
-        gradient = (2.0/n) * X.T @ (X @ beta - y)
-        beta -= eta*gradient
+        gradient = (2.0/n) * X.T @ ((X @ beta) - y)
+        # beta -= eta*gradient + momentum*change
+
+        new_change = eta*gradient + momentum*change
+        beta -= new_change
+        change = new_change
+
+        # kanskje ta vare på den beste ved hver iterasjon?
+
 
     print(beta)
 
@@ -41,7 +52,8 @@ def gradient_descent_OLS(X, x, y, n):
     sgdreg.fit(x,y.ravel())
     print(sgdreg.intercept_, sgdreg.coef_)
 
-def gradient_descent_ridge(X, x, y, n):
+def gradient_descent_ridge(X, x, y):
+    n = len(x)
 
     XT_X = X.T @ X
     lmd = 0.001  # ridge hyperparameter
@@ -111,9 +123,10 @@ if __name__ == "__main__":
     n = 100
 
     x = 2*np.random.rand(n,1)
-    y = 4+3*x+np.random.randn(n,1)
+    # y = 4+3*x+np.random.randn(n,1)
     
-    X = np.c_[np.ones((n,1)), x]
+    y = 3 + 2*x + 3*x**2
+    X = np.c_[np.ones((n,1)), x, x**2]
 
-    stochastic_gradient_descent(X,x,y,n)
+    gradient_descent_OLS(X,x,y)
 
