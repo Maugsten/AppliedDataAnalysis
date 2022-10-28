@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 
 
 class Neural_Network(object):
-    def __init__(self, eta=0.01, lmd=0, momentum=0, max_iterations=500):        
+    def __init__(self, eta=0.01, lmd=0, momentum=0.01, max_iterations=500):        
         # Define hyperparameters
         self.inputLayerSize = 3
         self.outputLayerSize = 1
@@ -26,10 +26,11 @@ class Neural_Network(object):
         self.momentum = momentum    # Momentum
         self.lmd = lmd              # Regularization parameter
         self.max_iterations = max_iterations
+        self.change1 = 0
+        self.change2 = 0
 
     def forward(self, X):
         #Propogate inputs though network
-        
         self.z2 = np.dot(X, self.W1) + self.B1 
         self.a2 = self.sigmoid(self.z2)
         self.z3 = np.dot(self.a2, self.W2) + self.B2
@@ -90,12 +91,14 @@ class Neural_Network(object):
         dJdW1, dJdW2, dJdB1, dJdB2 = self.costFunctionPrime(self.trainX, self.trainY)
 
         """ HER KAN VI IMPLEMENTERE FLERE GD METODER """
-        self.W1 = self.W1 - self.eta * dJdW1
-        self.W2 = self.W2 - self.eta * dJdW2
+        self.W1 = self.W1 - self.eta * dJdW1 - self.momentum*self.change1 
+        self.W2 = self.W2 - self.eta * dJdW2 - self.momentum*self.change2
         
         self.B1 = self.B1 - self.eta * dJdB1
         self.B2 = self.B2 - self.eta * dJdB2
-        
+
+        self.change1 = self.eta * dJdW1 + self.momentum*self.change1
+        self.change2 = self.eta * dJdW2 + self.momentum*self.change2
 
     def train(self, trainX, trainY, testX, testY):
         self.trainX = trainX
