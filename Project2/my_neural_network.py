@@ -3,32 +3,36 @@ Code is loosely based on Stephen Welch's 'Neural Networks Demystified'-series.
 https://github.com/stephencwelch/Neural-Networks-Demystified
 """
 
-from cProfile import label
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 
 
 class Neural_Network(object):
-    def __init__(self, eta=0.1, momentum=0.1):        
-        #Define Hyperparameters
+    def __init__(self, eta=0.01, lmd=0, momentum=0, max_iterations=500):        
+        # Define hyperparameters
         self.inputLayerSize = 3
         self.outputLayerSize = 1
-        self.hiddenLayerSize = 3
+        self.hiddenLayerSize = 5
         
-        #Weights (parameters)
+        # Weights and biases
         self.W1 = np.random.randn(self.inputLayerSize,self.hiddenLayerSize)
         self.W2 = np.random.randn(self.hiddenLayerSize,self.outputLayerSize)
+        self.B1 = np.zeros(self.hiddenLayerSize) + .01
+        self.B2 = np.zeros(self.outputLayerSize) + .01
 
-        #Define learning rate and momentum
-        self.eta = eta
-        self.momentum = momentum
-        
+        # More hyperparameters
+        self.eta = eta              # Learning rate
+        self.momentum = momentum    # Momentum
+        self.lmd = lmd              # Regularization parameter
+        self.max_iterations = max_iterations
+
     def forward(self, X):
         #Propogate inputs though network
-        self.z2 = np.dot(X, self.W1)
+        
+        self.z2 = np.dot(X, self.W1) + self.B1 
         self.a2 = self.sigmoid(self.z2)
-        self.z3 = np.dot(self.a2, self.W2)
+        self.z3 = np.dot(self.a2, self.W2) + self.B2
         yHat = self.sigmoid(self.z3) 
         return yHat
         
@@ -36,15 +40,39 @@ class Neural_Network(object):
         #Apply sigmoid activation function to scalar, vector, or matrix
         return 1/(1+np.exp(-z))
     
-    def sigmoidPrime(self,z):
+    def sigmoidPrime(self, z):
         #Gradient of sigmoid
         return np.exp(-z)/((1+np.exp(-z))**2)
+
+    def relu(self, z):
+        if z>0:
+            return z
+        else: 
+            return 0
+    
+    def reluPrime(self, z):
+        if z>0:
+            return 1
+        else: 
+            return 0
+
+    def leakyReLU(self, z, a=0.01):
+        if z>0:
+            return z
+        else: 
+            return a*z
+
+    def leakyReLUPrime(self, z, a=0.01):
+        if z>0:
+            return 1
+        else: 
+            return a
     
     def costFunction(self, X, y): # HER KAN DET LEGGES TIL REGULARIZATION
         #Compute cost for given X,y, use weights already stored in class.
         self.yHat = self.forward(X)
-        J = 0.5*sum((y-self.yHat)**2)
-        return J
+        C = 0.5*sum((y-self.yHat)**2) + self.lmd*(np.linalg.norm(self.W1) + np.linalg.norm(self.W2))
+        return C
         
     def costFunctionPrime(self, X, y):
         #Compute derivative with respect to W and W2 for a given X and y:
@@ -56,13 +84,18 @@ class Neural_Network(object):
         delta2 = np.dot(delta3, self.W2.T)*self.sigmoidPrime(self.z2)
         dJdW1 = np.dot(X.T, delta2)  
         
-        return dJdW1, dJdW2
+        return dJdW1, dJdW2, np.sum(delta2, axis=0), np.sum(delta3, axis=0)
 
     def backpropagate(self):
-        dJdW1, dJdW2 = self.costFunctionPrime(self.trainX, self.trainY)
+        dJdW1, dJdW2, dJdB1, dJdB2 = self.costFunctionPrime(self.trainX, self.trainY)
 
-        self.W1 -= self.eta * dJdW1
-        self.W2 -= self.eta * dJdW2
+        """ HER KAN VI IMPLEMENTERE FLERE GD METODER """
+        self.W1 = self.W1 - self.eta * dJdW1
+        self.W2 = self.W2 - self.eta * dJdW2
+        
+        self.B1 = self.B1 - self.eta * dJdB1
+        self.B2 = self.B2 - self.eta * dJdB2
+        
 
     def train(self, trainX, trainY, testX, testY):
         self.trainX = trainX
@@ -77,21 +110,28 @@ class Neural_Network(object):
         self.J.append(self.costFunction(trainX, trainY))
         self.testJ.append(self.costFunction(testX, testY))
 
-        max_iterations = 200
-        for i in range(max_iterations):
+        for i in range(self.max_iterations):
             self.backpropagate()
 
             self.J.append(self.costFunction(trainX, trainY))
             self.testJ.append(self.costFunction(testX, testY))
-            
+
+    def MSE(self, y):
+        mse = np.mean((y-self.yHat)**2)
+        return mse
+    
+    def R2(self, y):
+        r2 = 1 - sum((y-self.yHat)**2) / sum((y-np.mean(y))**2) 
+        return r2
+
 
 if __name__=="__main__":
     # Setting the data
-    n = 100
+    n = 1000
     x = 2*np.random.rand(n,1)-1
-    noise = np.random.normal(0, .1, (len(x),1))
-    y = 3 + 2*x + 3*x**2 + noise
-    # y = np.e**(-x**2)
+    noise = np.random.normal(0, .01, (len(x),1))
+    # y = 3 + 2*x + 3*x**2 + noise
+    y = np.e**(-x**2) #+ noise
 
     # Making the design matrix
     X = np.c_[np.ones((n,1)), x, x**2]
@@ -119,17 +159,17 @@ if __name__=="__main__":
 
     x = np.linspace(-1,1,n)
     noise = np.random.normal(0, .5, (len(x)))
-    y = 3 + 2*x + 3*x**2 + noise    
-    # y = np.e**(-x**2)
+    # y = 3 + 2*x + 3*x**2 + noise    
+    y = np.e**(-x**2) #+ noise
     X = np.c_[np.ones((n,1)), x, x**2]
     X = X/np.amax(X, axis=0)
     y = y/np.max(y) 
     yHat = NN.forward(X)
     plt.figure(figsize=(6,4))
-    plt.plot(y, label='Real data')
-    plt.plot(yHat, 'o', label='Fitted NN data')
+    plt.plot(x, y, label='Real data')
+    plt.plot(x, yHat, '--', label='Fitted NN data')
     plt.title('Comparison of real data and fitted data')
-    plt.xlabel('y')
-    plt.ylabel('x')
+    plt.xlabel('x')
+    plt.ylabel('y')
     plt.legend()
     plt.show()
