@@ -91,16 +91,23 @@ class Neural_Network(object):
         dJdW1, dJdW2, dJdB1, dJdB2 = self.costFunctionPrime(self.trainX, self.trainY)
 
         """ HER KAN VI IMPLEMENTERE FLERE GD METODER """
-        self.W1 = self.W1 - self.eta * dJdW1 - self.momentum*self.change1 
-        self.W2 = self.W2 - self.eta * dJdW2 - self.momentum*self.change2
+        if (self.method=='GD'):
+            self.W1 = self.W1 - self.eta * dJdW1 - self.momentum*self.change1 
+            self.W2 = self.W2 - self.eta * dJdW2 - self.momentum*self.change2
+            
+            self.B1 = self.B1 - self.eta * dJdB1
+            self.B2 = self.B2 - self.eta * dJdB2
+
+            self.change1 = self.eta * dJdW1 + self.momentum*self.change1
+            self.change2 = self.eta * dJdW2 + self.momentum*self.change2
         
-        self.B1 = self.B1 - self.eta * dJdB1
-        self.B2 = self.B2 - self.eta * dJdB2
+        else:
+            print('Gradient descent method not recognised :(')
+            exit()
 
-        self.change1 = self.eta * dJdW1 + self.momentum*self.change1
-        self.change2 = self.eta * dJdW2 + self.momentum*self.change2
+    def train(self, trainX, trainY, testX, testY, method='GD'):
+        self.method = method
 
-    def train(self, trainX, trainY, testX, testY):
         self.trainX = trainX
         self.trainY = trainY
         self.testX = testX
@@ -148,7 +155,7 @@ if __name__=="__main__":
 
     # Training the network
     NN = Neural_Network()
-    NN.train(X_train, y_train, X_test, y_test)
+    NN.train(X_train, y_train, X_test, y_test, method='Gd')
 
     # Plotting results
     plt.figure(figsize=(6,4))
