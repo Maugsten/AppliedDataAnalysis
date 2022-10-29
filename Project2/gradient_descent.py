@@ -101,7 +101,7 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
     # Stochastic part
     n_epochs = 50
     M = 5  # batch size
-    m = int(n/M)  # number of batches
+    m = int(len(x)/M)  # number of batches
 
     t0, t1 = 5, 50
     def learning_schedule(t):
@@ -130,6 +130,7 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
     eta = 1.0/np.max(EigValues)
     training_gradient = elementwise_grad(CostFunc,2)  # 2 means we are differentiating with respect to theta
     delta = 1e-8  # AdaGrad parameters to avoid possible zero division
+    change = 0
     for epoch in range(n_epochs):
         grad_squared = np.zeros(shape=(3,1))
         for i in range(m):
@@ -142,7 +143,7 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
             # gradient squared
             grad_squared += gradient * gradient
             # change in weights
-            change = eta/np.sqrt(grad_squared) * gradient + momentum*change
+            change = (eta/np.sqrt(grad_squared) + delta) * gradient + momentum*change
 
             weights -= change
 
@@ -153,6 +154,7 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
     weights = np.random.randn(len(X[0]),1)
     # moving average parameter, 0.9 is ususally recommended
     rho = 0.9
+    change = 0
     for epoch in range(n_epochs):
         grad_squared = np.zeros(shape=(3,1))
         for i in range(m):
@@ -162,59 +164,67 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
 
             gradient = (1.0/M)*training_gradient(yi, xi, weights)
             prev_grad = grad_squared
-            grad_squared += gradient * gradient
-            new_grad = rho*prev_grad
-            # previous value for the outer product of gradients
-            prev = Giter
-            # accumulated gradient
-            Giter += gradients @ gradients.T  # same as gradient**2
-            
-            # scaling
-            Gnew = rho*prev + (1-rho)*Giter
-           
-            # taking the diagonal and inverting
-            Ginverse = np.c_[eta/(delta + np.sqrt(np.diag(Gnew)))]
-            
-            change = np.multiply(Ginverse,gradients) + momentum*change
-            theta -= change
+            grad_squared = gradient * gradient  # note that this doesn't update prev_grad
+            grad_squared += rho*prev_grad + (1-rho)*grad_squared
+
+            change = (eta/np.sqrt(grad_squared) + delta) * gradient + momentum*change
+            weights -= change
 
     print("theta from SGD with RMSprop")
-    print(theta)
+    print(weights)
 
     # Adam
-    theta = np.random.randn(len(X[0]),1)
+    # picking initially random weights and biases
+    weights = np.random.randn(len(X[0,1:]),1)
+    bias = np.random.randn(1,1)
     # mean and uncentered variance from the previous time step of the gradients of the parameters
-    mean_grad, var_grad = 0, 0 
-    beta1, beta2 = 0.9, 0.999
+    m_dw, m_db, v_dw, v_db = 0, 0, 0, 0 
+    rho1, rho2 = 0.9, 0.999
+    epsilon = 1e-8  # to prevent zero-division
+
     for epoch in range(n_epochs):
-        momentum_Adam = np.zeros(shape=(3,3))
-        rms = np.zeros(shape=(3,3))
+        m_dw = np.zeros(shape=(3,1))
+        m_db = np.zeros(shape=(3,1))
+        v_dw = np.zeros(shape=(3,1))
+        v_db = np.zeros(shape=(3,1))
         for i in range(m):
             random_index = M*np.random.randint(m)  # why does Morten multiply with M?
             xi = X[random_index:random_index+M]
             yi = y[random_index:random_index+M]
 
-            # calculating the gradient
-            gradients = (1.0/M)*training_gradient(yi, xi, theta)
-            # previous value for the outer product of gradients
-            prev_momentum = momentum_Adam
-            prev_rms = rms
-            # gradient**2
-            Giter = gradients @ gradients.T
-            
-            # mean of the gradient - momentum
-            momentum_Adam += beta1*prev_momentum + (1-beta1)*Giter
-            # variance of the gradient - rms
-            rms += beta2*prev_rms + (1-beta2)*gradients
+            # calculating the gradient in terms of weights and biases
+            grad_w = (1.0/M)*training_gradient(yi, xi, weights)
+            grad_b = (1.0/M)*training_gradient(yi, xi, bias)
+
+            prev_m_dw = m_dw
+            prev_m_db = m_db
+            prev_v_dw = v_dw
+            prev_v_db = v_db
+
+            ## momentum ##
+            # weights
+            m_dw = rho1*prev_m_dw + (1-rho1)*grad_w
+            # biases
+            m_db = rho1*prev_m_db + (1-rho1)*grad_b
+
+            ## rms ##
+            # weights
+            v_dw = rho2*prev_v_dw + (1-rho2)*(grad_w**2)
+            # biases
+            v_db = rho2*prev_v_db + (1-rho2)*(grad_b**2)
 
             # bias correction
-            momentum_Adam_corrected = mean_grad/(1-beta1**i + delta)
-            rms_corrected = var_grad/(1-beta2**i + delta)
+            m_dw_corr = m_dw / (1-rho1**i)
+            m_db_corr = m_db / (1-rho1**i)
+            v_dw_corr = v_dw / (1-rho2**i)
+            v_db_corr = v_db / (1-rho2**i)
 
-            theta -= (eta / (np.sqrt(rms_corrected + delta)))*momentum_Adam_corrected
+            # updating the parameters
+            weights -= eta*(m_dw_corr/(np.sqrt(v_dw_corr)+epsilon))
+            bias -= eta*(m_db_corr/(np.sqrt(v_db_corr)+epsilon))
 
     print("theta from SGD with Adam")
-    print(theta)
+    print(weights, bias)
 
 if __name__ == "__main__":
 
