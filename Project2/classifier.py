@@ -10,7 +10,7 @@ class Neural_Network(object):
         # Define hyperparameters
         self.inputLayerSize = 30
         self.outputLayerSize = 1
-        self.hiddenLayerSize = 5
+        self.hiddenLayerSize = 10
         
         # Weights and biases
         self.W1 = np.random.randn(self.inputLayerSize,self.hiddenLayerSize)
@@ -73,14 +73,14 @@ class Neural_Network(object):
         return C
         
     def costFunctionPrime(self, X, y):
-        #Compute derivative with respect to W and W2 for a given X and y:
+        #Compute derivative with respect to W1 and W2 for a given X and y:
         self.yHat = self.forward(X)
         
         delta3 = np.multiply(-(y-self.yHat), self.sigmoidPrime(self.z3))
         dJdW2 = np.dot(self.a2.T, delta3)
         
-        print(np.shape(delta3))
-        print(np.shape(self.W2.T))
+        # print(np.shape(delta3))
+        # print(np.shape(self.W2.T))
         delta2 = np.dot(delta3, self.W2.T)*self.sigmoidPrime(self.z2)
         dJdW1 = np.dot(X.T, delta2)  
         
@@ -158,7 +158,7 @@ if __name__=="__main__":
             y[i]=0
         else:
             print('Unrecognised data')
-    y = y.astype(np.float64)    
+    y = y.astype(np.float64).reshape(1,-1).T
     
     # Scaling the features (normalization)
     for i in range(len(X[0,:])):
@@ -172,6 +172,11 @@ if __name__=="__main__":
     # Training the network
     NN = Neural_Network()
     NN.train(X_train, y_train, X_test, y_test, method='GD')
+
+    prediction = NN.forward(X)
+    errors = abs(y-prediction)
+    accuracy = 1 - np.sum(errors)/len(errors)
+    print('Accuracy: {}'.format(accuracy))
 
     # Plotting results
     plt.figure(figsize=(6,4))
