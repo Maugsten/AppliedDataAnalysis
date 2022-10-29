@@ -80,7 +80,8 @@ def gradient_descent(X, x, y, momentum=0, lmd=0):
 
 
 def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
-    
+    n = len(x) # number of datapoints
+
     ### Analytical ###
     theta_linreg = np.linalg.inv(X.T @ X) @ (X.T @ y)
     print("analytical theta")
@@ -129,6 +130,7 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
     weights = np.random.randn(len(X[0]),1)
     eta = 1.0/np.max(EigValues)
     training_gradient = elementwise_grad(CostFunc,2)  # 2 means we are differentiating with respect to theta
+    
     delta = 1e-8  # AdaGrad parameters to avoid possible zero division
     for epoch in range(n_epochs):
         grad_squared = np.zeros(shape=(3,1))
@@ -149,37 +151,37 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
     print("theta from SGD with AdaGrad")
     print(weights)
 
-    # Autograd with RMSprop, NOTE: we don't change eta here, why?
-    weights = np.random.randn(len(X[0]),1)
-    # moving average parameter, 0.9 is ususally recommended
-    rho = 0.9
-    for epoch in range(n_epochs):
-        grad_squared = np.zeros(shape=(3,1))
-        for i in range(m):
-            random_index = M*np.random.randint(m)  # why does Morten multiply with M?
-            xi = X[random_index:random_index+M]
-            yi = y[random_index:random_index+M]
+    # # Autograd with RMSprop, NOTE: we don't change eta here, why?
+    # weights = np.random.randn(len(X[0]),1)
+    # # moving average parameter, 0.9 is ususally recommended
+    # rho = 0.9
+    # for epoch in range(n_epochs):
+    #     grad_squared = np.zeros(shape=(3,1))
+    #     for i in range(m):
+    #         random_index = M*np.random.randint(m)  # why does Morten multiply with M?
+    #         xi = X[random_index:random_index+M]
+    #         yi = y[random_index:random_index+M]
 
-            gradient = (1.0/M)*training_gradient(yi, xi, weights)
-            prev_grad = grad_squared
-            grad_squared += gradient * gradient
-            new_grad = rho*prev_grad
-            # previous value for the outer product of gradients
-            prev = Giter
-            # accumulated gradient
-            Giter += gradients @ gradients.T  # same as gradient**2
+    #         gradient = (1.0/M)*training_gradient(yi, xi, weights)
+    #         prev_grad = grad_squared
+    #         grad_squared += gradient * gradient
+    #         new_grad = rho*prev_grad
+    #         # previous value for the outer product of gradients
+    #         prev = Giter
+    #         # accumulated gradient
+    #         Giter += gradients @ gradients.T  # same as gradient**2
             
-            # scaling
-            Gnew = rho*prev + (1-rho)*Giter
+    #         # scaling
+    #         Gnew = rho*prev + (1-rho)*Giter
            
-            # taking the diagonal and inverting
-            Ginverse = np.c_[eta/(delta + np.sqrt(np.diag(Gnew)))]
+    #         # taking the diagonal and inverting
+    #         Ginverse = np.c_[eta/(delta + np.sqrt(np.diag(Gnew)))]
             
-            change = np.multiply(Ginverse,gradients) + momentum*change
-            theta -= change
+    #         change = np.multiply(Ginverse,gradients) + momentum*change
+    #         theta -= change
 
-    print("theta from SGD with RMSprop")
-    print(theta)
+    # print("theta from SGD with RMSprop")
+    # print(theta)
 
     # Adam
     theta = np.random.randn(len(X[0]),1)
