@@ -126,41 +126,44 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
     print(theta)
 
     # Autograd with AdaGrad, NOTE: we don't change eta here, why?
-    theta = np.random.randn(len(X[0]),1)
+    weights = np.random.randn(len(X[0]),1)
     eta = 1.0/np.max(EigValues)
     training_gradient = elementwise_grad(CostFunc,2)  # 2 means we are differentiating with respect to theta
     delta = 1e-8  # AdaGrad parameters to avoid possible zero division
     for epoch in range(n_epochs):
-        Giter = np.zeros(shape=(3,3))
+        grad_squared = np.zeros(shape=(3,1))
         for i in range(m):
             random_index = M*np.random.randint(m)  # why does Morten multiply with M?
             xi = X[random_index:random_index+M]
             yi = y[random_index:random_index+M]
 
-            gradients = (1.0/M)*training_gradient(yi, xi, theta)
-            # calculate outer product of gradients
-            Giter += gradients @ gradients.T
-            # algorithm with only diagonal elements
-            Ginverse = np.c_[eta/(delta + np.sqrt(np.diag(Giter)))]
+            gradient = (1.0/M)*training_gradient(yi, xi, weights)  # last time we scaled with 2/M, what is correct?
+            
+            # gradient squared
+            grad_squared += gradient * gradient
+            # change in weights
+            change = eta/np.sqrt(grad_squared) * gradient + momentum*change
 
-            change = np.multiply(Ginverse,gradients) + momentum*change
-            theta -= change
+            weights -= change
 
     print("theta from SGD with AdaGrad")
-    print(theta)
+    print(weights)
 
     # Autograd with RMSprop, NOTE: we don't change eta here, why?
-    theta = np.random.randn(len(X[0]),1)
-    # what parameter is this?
-    rho = 0.99 
+    weights = np.random.randn(len(X[0]),1)
+    # moving average parameter, 0.9 is ususally recommended
+    rho = 0.9
     for epoch in range(n_epochs):
-        Giter = np.zeros(shape=(3,3))
+        grad_squared = np.zeros(shape=(3,1))
         for i in range(m):
             random_index = M*np.random.randint(m)  # why does Morten multiply with M?
             xi = X[random_index:random_index+M]
             yi = y[random_index:random_index+M]
 
-            gradients = (1.0/M)*training_gradient(yi, xi, theta)
+            gradient = (1.0/M)*training_gradient(yi, xi, weights)
+            prev_grad = grad_squared
+            grad_squared += gradient * gradient
+            new_grad = rho*prev_grad
             # previous value for the outer product of gradients
             prev = Giter
             # accumulated gradient
