@@ -151,6 +151,9 @@ if __name__=="__main__":
     x = x/np.max(x)
     y = y/np.max(y) #Max test score is 100
 
+    print(np.shape(x))
+    print(np.shape(y))
+
     # Splitting into train and test data
     X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
