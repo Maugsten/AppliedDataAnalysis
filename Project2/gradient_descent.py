@@ -186,10 +186,10 @@ if __name__ == "__main__":
     y = 3 + 2*x + 3*x**2
     X = np.c_[np.ones((n,1)), x, x**2]
 
-    gradient_descent(X,x,y)
-    gradient_descent(X,x,y,momentum=0.03)
+    # gradient_descent(X,x,y)
+    # gradient_descent(X,x,y,momentum=0.03)
     gradient_descent(X,x,y,momentum=0.03,lmd=1e-3)
-    stochastic_gradient_descent(X,x,y)
-    stochastic_gradient_descent(X,x,y,momentum=0.03)
-    stochastic_gradient_descent(X,x,y,momentum=0.03,lmd=1e-3)
+    # stochastic_gradient_descent(X,x,y)
+    # stochastic_gradient_descent(X,x,y,momentum=0.03)
+    # stochastic_gradient_descent(X,x,y,momentum=0.03,lmd=1e-3)
 

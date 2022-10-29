@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 class Neural_Network(object):
     def __init__(self, eta=0.01, lmd=0, momentum=0.01, max_iterations=500):        
         # Define hyperparameters
-        self.inputLayerSize = 3
+        self.inputLayerSize = 1
         self.outputLayerSize = 1
         self.hiddenLayerSize = 5
         
@@ -139,23 +139,21 @@ if __name__=="__main__":
     # Setting the data
     n = 1000
     x = 2*np.random.rand(n,1)-1
+    print(np.shape(x))
     noise = np.random.normal(0, .01, (len(x),1))
     # y = 3 + 2*x + 3*x**2 + noise
     y = np.e**(-x**2) #+ noise
 
-    # Making the design matrix
-    X = np.c_[np.ones((n,1)), x, x**2]
-
     # Scaling the data
-    X = X/np.amax(X, axis=0)
+    x = x/np.max(x)
     y = y/np.max(y) #Max test score is 100
 
     # Splitting into train and test data
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
     # Training the network
     NN = Neural_Network()
-    NN.train(X_train, y_train, X_test, y_test, method='Gd')
+    NN.train(X_train, y_train, X_test, y_test, method='GD')
 
     # Plotting results
     plt.figure(figsize=(6,4))
@@ -167,14 +165,16 @@ if __name__=="__main__":
     plt.ylabel('Cost')
     plt.show()
 
-    x = np.linspace(-1,1,n)
+    x = np.linspace(-1,1,n).reshape(1,-1).T
+    print(np.shape(x))
     noise = np.random.normal(0, .5, (len(x)))
     # y = 3 + 2*x + 3*x**2 + noise    
     y = np.e**(-x**2) #+ noise
-    X = np.c_[np.ones((n,1)), x, x**2]
-    X = X/np.amax(X, axis=0)
-    y = y/np.max(y) 
-    yHat = NN.forward(X)
+
+    x = x/np.max(x)
+    y = y/np.max(y) #Max test score is 100
+
+    yHat = NN.forward(x)
     plt.figure(figsize=(6,4))
     plt.plot(x, y, label='Real data')
     plt.plot(x, yHat, '--', label='Fitted NN data')

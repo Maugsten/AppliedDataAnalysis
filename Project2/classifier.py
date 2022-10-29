@@ -1,14 +1,15 @@
 from fileinput import filename
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn import neural_network
 from sklearn.model_selection import train_test_split
 
 
 class Neural_Network(object):
     def __init__(self, eta=0.01, lmd=0, momentum=0.01, max_iterations=500):        
         # Define hyperparameters
-        self.inputLayerSize = 3
-        self.outputLayerSize = 2
+        self.inputLayerSize = 30
+        self.outputLayerSize = 1
         self.hiddenLayerSize = 5
         
         # Weights and biases
@@ -154,4 +155,25 @@ if __name__=="__main__":
             print('Unrecognised data')
     y = y.astype(np.float64)    
     
-    # X and y are now ready for the classifier
+    # Scaling the features (normalization)
+    for i in range(len(X[0,:])):
+        X[:,i] = (X[:,i]-np.amin(X[:,i])) / (np.amax(X[:,i]) - np.amin(X[:,i]))
+
+    # Note to self: shape of X = (569, 30)
+
+    # Splitting into train and test data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+    # Training the network
+    NN = Neural_Network()
+    NN.train(X_train, y_train, X_test, y_test, method='Gd')
+
+    # Plotting results
+    plt.figure(figsize=(6,4))
+    plt.plot(NN.J)
+    plt.plot(NN.testJ)
+    plt.grid()
+    plt.title('Training our neural network')
+    plt.xlabel('Iterations')
+    plt.ylabel('Cost')
+    plt.show()
