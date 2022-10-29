@@ -9,11 +9,11 @@ from sklearn.model_selection import train_test_split
 
 
 class Neural_Network(object):
-    def __init__(self, eta=0.01, lmd=0, momentum=0.01, max_iterations=500):        
+    def __init__(self, eta=0.01, lmd=0, momentum=0, max_iterations=500):        
         # Define hyperparameters
         self.inputLayerSize = 1
         self.outputLayerSize = 1
-        self.hiddenLayerSize = 5
+        self.hiddenLayerSize = 10
         
         # Weights and biases
         self.W1 = np.random.randn(self.inputLayerSize,self.hiddenLayerSize)
@@ -85,7 +85,10 @@ class Neural_Network(object):
         delta2 = np.dot(delta3, self.W2.T)*self.sigmoidPrime(self.z2)
         dJdW1 = np.dot(X.T, delta2)  
         
-        return dJdW1, dJdW2, np.sum(delta2, axis=0), np.sum(delta3, axis=0)
+        dJdB1 = np.sum(delta2, axis=0)
+        dJdB2 = np.sum(delta3, axis=0)
+        
+        return dJdW1, dJdW2, dJdB1, dJdB2
 
     def backpropagate(self):
         dJdW1, dJdW2, dJdB1, dJdB2 = self.costFunctionPrime(self.trainX, self.trainY)
@@ -139,10 +142,10 @@ if __name__=="__main__":
     # Setting the data
     n = 1000
     x = 2*np.random.rand(n,1)-1
-    print(np.shape(x))
+
     noise = np.random.normal(0, .01, (len(x),1))
-    # y = 3 + 2*x + 3*x**2 + noise
-    y = np.e**(-x**2) #+ noise
+    y = 3 + 2*x + 3*x**2 #+ noise
+    # y = np.e**(-x**2) #+ noise
 
     # Scaling the data
     x = x/np.max(x)
@@ -166,10 +169,10 @@ if __name__=="__main__":
     plt.show()
 
     x = np.linspace(-1,1,n).reshape(1,-1).T
-    print(np.shape(x))
+
     noise = np.random.normal(0, .5, (len(x)))
-    # y = 3 + 2*x + 3*x**2 + noise    
-    y = np.e**(-x**2) #+ noise
+    y = 3 + 2*x + 3*x**2 #+ noise    
+    # y = np.e**(-x**2) #+ noise
 
     x = x/np.max(x)
     y = y/np.max(y) #Max test score is 100

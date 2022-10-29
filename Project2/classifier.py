@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 
 
 class Neural_Network(object):
-    def __init__(self, eta=0.01, lmd=0, momentum=0.01, max_iterations=500):        
+    def __init__(self, eta=0.01, lmd=0, momentum=0, max_iterations=500):        
         # Define hyperparameters
         self.inputLayerSize = 30
         self.outputLayerSize = 1
@@ -79,10 +79,15 @@ class Neural_Network(object):
         delta3 = np.multiply(-(y-self.yHat), self.sigmoidPrime(self.z3))
         dJdW2 = np.dot(self.a2.T, delta3)
         
+        print(np.shape(delta3))
+        print(np.shape(self.W2.T))
         delta2 = np.dot(delta3, self.W2.T)*self.sigmoidPrime(self.z2)
         dJdW1 = np.dot(X.T, delta2)  
         
-        return dJdW1, dJdW2, np.sum(delta2, axis=0), np.sum(delta3, axis=0)
+        dJdB1 = np.sum(delta2, axis=0)
+        dJdB2 = np.sum(delta3, axis=0)
+
+        return dJdW1, dJdW2, dJdB1, dJdB2
 
     def backpropagate(self):
         dJdW1, dJdW2, dJdB1, dJdB2 = self.costFunctionPrime(self.trainX, self.trainY)
@@ -166,7 +171,7 @@ if __name__=="__main__":
 
     # Training the network
     NN = Neural_Network()
-    NN.train(X_train, y_train, X_test, y_test, method='Gd')
+    NN.train(X_train, y_train, X_test, y_test, method='GD')
 
     # Plotting results
     plt.figure(figsize=(6,4))
