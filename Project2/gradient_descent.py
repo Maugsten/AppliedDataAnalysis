@@ -1,3 +1,4 @@
+from statistics import mean
 import numpy as np
 from sklearn.linear_model import SGDRegressor
 import autograd.numpy as np
@@ -163,9 +164,11 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
             # previous value for the outer product of gradients
             prev = Giter
             # accumulated gradient
-            Giter += gradients @ gradients.T
+            Giter += gradients @ gradients.T  # same as gradient**2
+            
             # scaling
-            Gnew = (rho*prev + (1-rho)*Giter)
+            Gnew = rho*prev + (1-rho)*Giter
+           
             # taking the diagonal and inverting
             Ginverse = np.c_[eta/(delta + np.sqrt(np.diag(Gnew)))]
             
@@ -173,6 +176,41 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
             theta -= change
 
     print("theta from SGD with RMSprop")
+    print(theta)
+
+    # Adam
+    theta = np.random.randn(len(X[0]),1)
+    # mean and uncentered variance from the previous time step of the gradients of the parameters
+    mean_grad, var_grad = 0, 0 
+    beta1, beta2 = 0.9, 0.999
+    for epoch in range(n_epochs):
+        momentum_Adam = np.zeros(shape=(3,3))
+        rms = np.zeros(shape=(3,3))
+        for i in range(m):
+            random_index = M*np.random.randint(m)  # why does Morten multiply with M?
+            xi = X[random_index:random_index+M]
+            yi = y[random_index:random_index+M]
+
+            # calculating the gradient
+            gradients = (1.0/M)*training_gradient(yi, xi, theta)
+            # previous value for the outer product of gradients
+            prev_momentum = momentum_Adam
+            prev_rms = rms
+            # gradient**2
+            Giter = gradients @ gradients.T
+            
+            # mean of the gradient - momentum
+            momentum_Adam += beta1*prev_momentum + (1-beta1)*Giter
+            # variance of the gradient - rms
+            rms += beta2*prev_rms + (1-beta2)*gradients
+
+            # bias correction
+            momentum_Adam_corrected = mean_grad/(1-beta1**i + delta)
+            rms_corrected = var_grad/(1-beta2**i + delta)
+
+            theta -= (eta / (np.sqrt(rms_corrected + delta)))*momentum_Adam_corrected
+
+    print("theta from SGD with Adam")
     print(theta)
 
 if __name__ == "__main__":
@@ -186,10 +224,10 @@ if __name__ == "__main__":
     y = 3 + 2*x + 3*x**2
     X = np.c_[np.ones((n,1)), x, x**2]
 
-    gradient_descent(X,x,y)
-    gradient_descent(X,x,y,momentum=0.03)
-    gradient_descent(X,x,y,momentum=0.03,lmd=1e-3)
+    # gradient_descent(X,x,y)
+    # gradient_descent(X,x,y,momentum=0.03)
+    # gradient_descent(X,x,y,momentum=0.03,lmd=1e-3)
     stochastic_gradient_descent(X,x,y)
-    stochastic_gradient_descent(X,x,y,momentum=0.03)
-    stochastic_gradient_descent(X,x,y,momentum=0.03,lmd=1e-3)
+    # stochastic_gradient_descent(X,x,y,momentum=0.03)
+    # stochastic_gradient_descent(X,x,y,momentum=0.03,lmd=1e-3)
 
