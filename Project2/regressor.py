@@ -9,17 +9,59 @@ from sklearn.model_selection import train_test_split
 
 
 class Neural_Network(object):
-    def __init__(self, eta=0.01, lmd=0, momentum=0, max_iterations=500):        
+    def __init__(self, X, hidden_layers=1, nodes=10, nodes_output=1, eta=0.01, lmd=0, momentum=0, max_iterations=500):        
         # Define hyperparameters
-        self.inputLayerSize = 1
-        self.outputLayerSize = 1
-        self.hiddenLayerSize = 10
-        
-        # Weights and biases
-        self.W1 = np.random.randn(self.inputLayerSize,self.hiddenLayerSize)
-        self.W2 = np.random.randn(self.hiddenLayerSize,self.outputLayerSize)
-        self.B1 = np.zeros(self.hiddenLayerSize) + .01
-        self.B2 = np.zeros(self.outputLayerSize) + .01
+        # self.inputLayerSize = 1
+        # self.outputLayerSize = 1
+        # self.hiddenLayerSize = 10
+        self.X = X
+        self.features = np.shape(self.X)[1]  # number of columns/features
+        self.hidden_layers = hidden_layers
+        self.nodes = nodes
+        self.nodes_output = nodes_output  # number of nodes in output layer
+
+        ## initial Weights and biases for each layer ##
+        np.random.seed(2)
+        prev_num_nodes = self.nodes
+        self.W_list = []
+        self.B_list = []
+
+        # create weights and biases for each layer
+        for i in range(self.hidden_layers+1):
+
+            # first layer
+            if i == 0:
+                # matrix of weights (features x nodes)
+                W = np.random.randn(self.features,self.nodes)
+                self.W_list.append(W)
+                # column vector of biases 
+                B = np.random.randn(self.nodes,1)
+                self.B_list.append(B)
+
+            # hidden layers
+            elif 0 < i < self.hidden_layers:
+                # random number of nodes between 2 and 10
+                rand_num_nodes = np.random.randint(2,11)
+                # matrix of weights (previous number of nodes x random number of nodes)
+                W = np.random.randn(prev_num_nodes, rand_num_nodes)
+                self.W_list.append(W)
+                # column vector of biases (one bias per node)
+                B = np.random.randn(rand_num_nodes,1)
+                self.B_list.append(B)
+                prev_num_nodes = rand_num_nodes 
+            
+            # output layer
+            elif i == self.hidden_layers:
+                W = np.random.randn(prev_num_nodes, self.nodes_output)
+                self.W_list.append(W)
+                B = np.random.randn(self.nodes_output,1)
+                self.hidden_layer_biases.append(B)
+
+
+        # self.W1 = np.random.randn(self.features,self.nodes)  # features x nodes, first layer. This shape means that we don't have to transpose the matrix
+        # self.W2 = np.random.randn(self.features,self.nodes) # second layer
+        # self.B1 = np.zeros(self.hiddenLayerSize) + .01  # i.e. 10 zeros
+        # self.B2 = np.zeros(self.outputLayerSize) + .01  # i.e. 1 zero
 
         # More hyperparameters
         self.eta = eta              # Learning rate
@@ -29,9 +71,27 @@ class Neural_Network(object):
         self.change1 = 0
         self.change2 = 0
 
-    def forward(self, X):
-        #Propogate inputs though network
-        self.z2 = np.dot(X, self.W1) + self.B1 
+    def forward(self):
+        """Propagate inputs through network"""
+
+        z_prev = 0
+        for i in range(self.hidden_layers+1):
+            W = self.W_list[i]  # weight matrix for layer i
+            B = self.B_list[i]  # bias vector for layer i
+
+            # first layer
+            if i == 0:
+                z = np.dot(self.X, W) + B  # NB! numpy turns the vector B into a matrix of the correct shape so that it can be added to the other matrix
+                z_prev = z
+
+            # hidden layers
+            elif 0 < i < self.hidden_layers:
+                z = np.dot(self.X, W) + B
+
+            elif i == self.hidden_layers:
+                z
+
+        self.z2 = np.dot(self.X, self.W1) + self.B1 
         self.a2 = self.sigmoid(self.z2)
         self.z3 = np.dot(self.a2, self.W2) + self.B2
         yHat = self.sigmoid(self.z3) 
