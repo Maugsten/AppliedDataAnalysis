@@ -83,7 +83,8 @@ def gradient_descent(X, x, y, momentum=0, lmd=0):
 
 
 def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
-    
+    n = len(x) # number of datapoints
+
     ### Analytical ###
     theta_linreg = np.linalg.inv(X.T @ X) @ (X.T @ y)
     print("analytical theta")
@@ -132,6 +133,7 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
     weights = np.random.randn(len(X[0]),1)
     eta = 1.0/np.max(EigValues)
     training_gradient = elementwise_grad(CostFunc,2)  # 2 means we are differentiating with respect to theta
+    
     delta = 1e-8  # AdaGrad parameters to avoid possible zero division
     change = 0
     for epoch in range(n_epochs):

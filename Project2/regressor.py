@@ -164,6 +164,9 @@ class Neural_Network(object):
             self.change1 = self.eta * dJdW1 + self.momentum*self.change1
             self.change2 = self.eta * dJdW2 + self.momentum*self.change2
         
+        # elif (self.method="SGD"):
+        #     SGD() 
+        
         else:
             print('Gradient descent method not recognised :(')
             exit()
