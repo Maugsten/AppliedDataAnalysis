@@ -3,6 +3,7 @@ Code is loosely based on Stephen Welch's 'Neural Networks Demystified'-series.
 https://github.com/stephencwelch/Neural-Networks-Demystified
 """
 
+from cProfile import label
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
@@ -261,8 +262,8 @@ if __name__=="__main__":
     X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
     # nodes = np.array([5, 7, 4])
-    nodes = np.array([10, 10, 10])
-    NN = Neural_Network(X_train, 3, nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0.01, maxIterations=500)
+    nodes = np.array([10])
+    NN = Neural_Network(X_train, 1, nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500)
     NN.train(X_train, y_train, X_test, y_test, method='GD')
 
     """
@@ -272,8 +273,8 @@ if __name__=="__main__":
     """
     # Plotting results
     plt.figure(figsize=(6,4))
-    plt.plot(NN.J)
-    plt.plot(NN.testJ)
+    plt.plot(NN.J, label='Train Data')
+    plt.plot(NN.testJ, label='Test Data')
     plt.grid()
     plt.title('Training our neural network')
     plt.xlabel('Iterations')
