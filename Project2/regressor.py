@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 
 
 class Neural_Network(object):
-    def __init__(self, X, numberOfHiddenLayers=1, nodes=1, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500):        
+    def __init__(self, X, numberOfHiddenLayers, nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000):        
         # Define hyperparameters
         # self.inputLayerSize = 1
         # self.hiddenLayerSize = 5
@@ -62,7 +62,7 @@ class Neural_Network(object):
                 w = np.random.randn(self.nodes[-1], self.outputLayerSize)
                 self.W.append(w)
                 
-                b = np.random.randn(self.outputLayerSize,1)
+                b = np.random.randn(self.outputLayerSize)
                 self.B.append(b)
 
         # self.W1 = np.random.randn(self.features,self.nodes)  # features x nodes, first layer. This shape means that we don't have to transpose the matrix
@@ -70,6 +70,8 @@ class Neural_Network(object):
         # self.B1 = np.zeros(self.hiddenLayerSize) + .01  # i.e. 10 zeros
         # self.B2 = np.zeros(self.outputLayerSize) + .01  # i.e. 1 zero
 
+        for i in range(len(self.W)):
+            print(np.shape(self.W[i]))
 
         # More hyperparameters
         self.eta = eta              # Learning rate
@@ -78,13 +80,14 @@ class Neural_Network(object):
         self.maxIterations = maxIterations
         self.change = [0 for i in range(self.numberOfHiddenLayers+1)]
 
+        self.z = [0 for i in range(self.numberOfHiddenLayers+1)]
+        self.a = [0 for i in range(self.numberOfHiddenLayers+1)]
+
     def forward(self, X):
         """Propagate inputs through network"""
 
         # self.z = np.zeros(self.numberOfHiddenLayers+1)
         # self.a = np.zeros(self.numberOfHiddenLayers+1)
-        self.z = [0 for i in range(self.numberOfHiddenLayers+1)]
-        self.a = [0 for i in range(self.numberOfHiddenLayers+1)]
         
         for i in range(self.numberOfHiddenLayers+1):
 
@@ -161,25 +164,20 @@ class Neural_Network(object):
         dJdW = [0 for i in range(self.numberOfHiddenLayers+1)]
         dJdB = [0 for i in range(self.numberOfHiddenLayers+1)]
 
-        for i in range(self.numberOfHiddenLayers, 0, -1):
-            delta[i] = np.multiply(-(y-self.a[i]), self.sigmoidPrime(self.z[i]))
-            dJdW[i] = np.dot(self.a[i-1].T, delta[i])    
-            dJdB[i] = np.sum(delta[i], axis=0)
+        delta[-1] = np.multiply(-(y-self.a[-1]), self.sigmoidPrime(self.z[-1]))
+        dJdW[-1] = np.dot(self.a[-2].T, delta[-1])    
+        dJdB[-1] = np.sum(delta[-1], axis=0)
 
-        delta[0] = np.multiply(-(y-self.a[0]), self.sigmoidPrime(self.z[0]))
+        for i in range(self.numberOfHiddenLayers-1, 0, -1):
+            delta[i] = np.dot(delta[i+1], self.W[i+1].T)*self.sigmoidPrime(self.z[i])
+            dJdW[i] = np.dot(self.a[i-1].T, delta[i])    
+            dJdB[i] = np.sum(delta[i], axis=0) 
+
+        # delta[0] = np.multiply(-(y-self.a[0]), self.sigmoidPrime(self.z[0]))
+        delta[0] = np.dot(delta[1], self.W[1].T)*self.sigmoidPrime(self.z[0])
         dJdW[0] = np.dot(self.X.T, delta[0])    
-        dJdB[0] = np.sum(delta[0], axis=0)
-        
-        # delta3 = np.multiply(-(y-self.yHat), self.sigmoidPrime(self.z3))
-        # dJdW2 = np.dot(self.a2.T, delta3)
-        
-        # delta2 = np.dot(delta3, self.W2.T)*self.sigmoidPrime(self.z2)
-        # dJdW1 = np.dot(X.T, delta2)  
-        
-        # dJdB1 = np.sum(delta2, axis=0)
-        # dJdB2 = np.sum(delta3, axis=0)
-        
-        # return dJdW1, dJdW2, dJdB1, dJdB2
+        dJdB[0] = np.sum(delta[0], axis=0) 
+
         return dJdW, dJdB
 
     def backpropagate(self):
@@ -188,6 +186,7 @@ class Neural_Network(object):
 
         if (self.method=='GD'):
             for i in range(len(self.W)):
+                # print(i)
                 self.W[i] = self.W[i] - self.eta * dJdW[i] - self.momentum*self.change[i] 
                 self.B[i] = self.B[i] - self.eta * dJdB[i]
                 self.change[i] = self.eta * dJdW[i] + self.momentum*self.change[i]
@@ -225,7 +224,7 @@ class Neural_Network(object):
         self.J.append(self.costFunction(trainX, trainY))
         self.testJ.append(self.costFunction(testX, testY))
 
-        for i in range(self.maxIterations):
+        for iteration in range(self.maxIterations):
             self.backpropagate()
 
             self.J.append(self.costFunction(trainX, trainY))
@@ -245,7 +244,7 @@ if __name__=="__main__":
     
     # Setting the data
     n = 1000
-    x = 2*np.random.rand(n,1)-1
+    x = np.random.rand(n,1)
 
     noise = np.random.normal(0, .01, (len(x),1))
     y = 3 + 2*x + 3*x**2 #+ noise
@@ -262,8 +261,8 @@ if __name__=="__main__":
     X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
     # nodes = np.array([5, 7, 4])
-    nodes = np.array([10])
-    NN = Neural_Network(X_train, 1, nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500)
+    nodes = np.array([7, 5])
+    NN = Neural_Network(X_train, 2, nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000)
     NN.train(X_train, y_train, X_test, y_test, method='GD')
 
     """
@@ -279,9 +278,10 @@ if __name__=="__main__":
     plt.title('Training our neural network')
     plt.xlabel('Iterations')
     plt.ylabel('Cost')
+    plt.legend()
     plt.show()
     
-    x = np.linspace(-1,1,n).reshape(1,-1).T
+    x = np.linspace(0,1,n).reshape(1,-1).T
 
     noise = np.random.normal(0, .5, (len(x)))
     y = 3 + 2*x + 3*x**2 #+ noise    
