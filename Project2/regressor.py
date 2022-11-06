@@ -11,7 +11,7 @@ from NN_gradient_descent_methods import *
 
 
 class Neural_Network(object):
-    def __init__(self, X, numberOfHiddenLayers=1, nodes=1, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500):        
+    def __init__(self, X, numberOfHiddenLayers, nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000):        
         # Define hyperparameters
         self.X = X # Feature data
         
@@ -56,7 +56,7 @@ class Neural_Network(object):
                 w = np.random.randn(self.nodes[-1], self.outputLayerSize)
                 self.W.append(w)
                 
-                b = np.random.randn(self.outputLayerSize,1)
+                b = np.random.randn(self.outputLayerSize)
                 self.B.append(b)
 
         # More hyperparameters
@@ -137,15 +137,20 @@ class Neural_Network(object):
         dCdW = [0 for i in range(self.numberOfHiddenLayers+1)]  # list of derivatives of the cost function in terms of weights
         dCdB = [0 for i in range(self.numberOfHiddenLayers+1)]  # list of derivatives of the cost function in terms of biases
 
-        for i in range(self.numberOfHiddenLayers, 0, -1):
-            delta[i] = np.multiply(-(y-self.a[i]), self.sigmoidPrime(self.z[i]))
-            dCdW[i] = np.dot(self.a[i-1].T, delta[i])    
-            dCdB[i] = np.sum(delta[i], axis=0)
+        delta[-1] = np.multiply(-(y-self.a[-1]), self.sigmoidPrime(self.z[-1]))
+        dCdW[-1] = np.dot(self.a[-2].T, delta[-1])    
+        dCdB[-1] = np.sum(delta[-1], axis=0)
 
-        delta[0] = np.multiply(-(y-self.a[0]), self.sigmoidPrime(self.z[0]))
+        for i in range(self.numberOfHiddenLayers-1, 0, -1):
+            delta[i] = np.dot(delta[i+1], self.W[i+1].T)*self.sigmoidPrime(self.z[i])
+            dCdW[i] = np.dot(self.a[i-1].T, delta[i])    
+            dCdB[i] = np.sum(delta[i], axis=0) 
+
+        # delta[0] = np.multiply(-(y-self.a[0]), self.sigmoidPrime(self.z[0]))
+        delta[0] = np.dot(delta[1], self.W[1].T)*self.sigmoidPrime(self.z[0])
         dCdW[0] = np.dot(self.X.T, delta[0])    
-        dCdB[0] = np.sum(delta[0], axis=0)
-        
+        dCdB[0] = np.sum(delta[0], axis=0) 
+
         return dCdW, dCdB
 
     def backpropagate(self):
@@ -192,7 +197,7 @@ class Neural_Network(object):
         self.C.append(self.costFunction(trainX, trainY))
         self.testC.append(self.costFunction(testX, testY))
 
-        for _ in range(self.maxIterations):
+        for iteration in range(self.maxIterations):
             self.backpropagate()
 
             self.C.append(self.costFunction(trainX, trainY))
@@ -212,7 +217,7 @@ if __name__=="__main__":
     
     # Setting the data
     n = 1000
-    x = 2*np.random.rand(n,1)-1
+    x = np.random.rand(n,1)
 
     noise = np.random.normal(0, .01, (len(x),1))
     y = 3 + 2*x + 3*x**2 #+ noise
@@ -229,9 +234,9 @@ if __name__=="__main__":
     X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
     # nodes = np.array([5, 7, 4])
-    nodes = np.array([6,7,4,5])
-    NN = Neural_Network(X_train, 4, nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500)
-    NN.train(X_train, y_train, X_test, y_test, method='AdaGrad')
+    nodes = np.array([7, 5])
+    NN = Neural_Network(X_train, 2, nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000)
+    NN.train(X_train, y_train, X_test, y_test, method='GD')
 
     """
     # Training the network
@@ -246,9 +251,10 @@ if __name__=="__main__":
     plt.title('Training our neural network')
     plt.xlabel('Iterations')
     plt.ylabel('Cost')
+    plt.legend()
     plt.show()
     
-    x = np.linspace(-1,1,n).reshape(1,-1).T
+    x = np.linspace(0,1,n).reshape(1,-1).T
 
     noise = np.random.normal(0, .5, (len(x)))
     y = 3 + 2*x + 3*x**2 #+ noise    
