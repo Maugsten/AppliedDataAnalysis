@@ -11,7 +11,7 @@ from NN_gradient_descent_methods import *
 
 
 class Neural_Network(object):
-    def __init__(self, X, numberOfHiddenLayers, nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000):        
+    def __init__(self, X, numberOfHiddenLayers, nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, epochs=1000, batchSize=10):        
         # Define hyperparameters
         self.X = X # Feature data
         
@@ -63,9 +63,22 @@ class Neural_Network(object):
         self.eta = eta              # Learning rate
         self.momentum = momentum    # Momentum
         self.lmd = lmd              # Regularization parameter
-        self.maxIterations = maxIterations
+        self.epochs = epochs        # number of iterations through the network
         self.change = [0 for i in range(self.numberOfHiddenLayers+1)]
 
+        # for RMSprop and Adam optimizer method
+        self.RMS_W = [0 for i in range(self.numberOfHiddenLayers+1)]
+        self.RMS_B = [0 for i in range(self.numberOfHiddenLayers+1)]
+
+        # for Adam optimizer method
+        self.M_W = [0 for i in range(self.numberOfHiddenLayers+1)]
+        self.M_B = [0 for i in range(self.numberOfHiddenLayers+1)]
+        self.epochNumber = [i for i in range(epochs)]
+
+        # for stochastic gradinet descent
+        self.batchSize = batchSize
+        self.numOfBatches = int(np.shape(self.X)[1] / self.batchSize)
+        
         self.z = [0 for i in range(self.numberOfHiddenLayers+1)]
         self.a = [0 for i in range(self.numberOfHiddenLayers+1)]
 
@@ -156,34 +169,23 @@ class Neural_Network(object):
     def backpropagate(self):
         dCdW, dCdB = self.costFunctionPrime(self.trainX, self.trainY)
 
-        # if (self.method=='GD'):
-        #     for i in range(len(self.W)):
-        #         self.W[i] = self.W[i] - self.eta * dCdW[i] - self.momentum*self.change[i] 
-        #         self.B[i] = self.B[i] - self.eta * dCdB[i] 
-        #         self.change[i] = self.eta * dCdW[i] + self.momentum*self.change[i]
+        if self.method == 'GD':
+            updatedW, updatedB = gradient_descent(dCdW, dCdB, self.W, self.B, self.eta, self.momentum, self.change, self.optimizer, self.RMS_W, self.RMS_B, self.M_W, self.M_B, self.epoch)
+            self.W = updatedW
+            self.B = updatedB
 
-        gradient_descent(dCdW, dCdB, self.W, self.B, self.eta, self.momentum, self.change, optimizer=self.method)
-
-        # """ HER KAN VI IMPLEMENTERE FLERE GD METODER """
-        # if (self.method=='GD'):
-        #     self.W1 = self.W1 - self.eta * dJdW1 - self.momentum*self.change1 
-        #     self.W2 = self.W2 - self.eta * dJdW2 - self.momentum*self.change2
-            
-        #     self.B1 = self.B1 - self.eta * dJdB1
-        #     self.B2 = self.B2 - self.eta * dJdB2
-
-        #     self.change1 = self.eta * dJdW1 + self.momentum*self.change1
-        #     self.change2 = self.eta * dJdW2 + self.momentum*self.change2
+        elif self.method == 'SGD':
+            updatedW, updatedB = stochastic_gradient_descent(dCdW, dCdB, self.W, self.B, self.eta, self.momentum, self.change, self.RMS_W, self.RMS_B, self.M_W, self.M_B, self.epoch, self.batchSize, self.numOfBatches)
+            self.W = updatedW
+            self.B = updatedB
         
-        # elif (self.method="SGD"):
-        #     SGD() 
-        
-        # else:
-        #     print('Gradient descent method not recognised :(')
-        #     exit()
+        else:
+            print('Gradient descent method not recognised :(')
+            exit()
 
-    def train(self, trainX, trainY, testX, testY, method='GD'):
+    def train(self, trainX, trainY, testX, testY, method='GD', optimizer='None'):
         self.method = method
+        self.optimizer = optimizer
 
         self.trainX = trainX
         self.trainY = trainY
@@ -197,11 +199,31 @@ class Neural_Network(object):
         self.C.append(self.costFunction(trainX, trainY))
         self.testC.append(self.costFunction(testX, testY))
 
-        for iteration in range(self.maxIterations):
-            self.backpropagate()
+        # creating minibacthes for stochastic gradient descent
+        
+        if self.method == 'SGD':
+            dCdW_batch = [0 for i in range(self.numOfBatches)]
+            dCdB_batch = [0 for i in range(self.numOfBatches)]
+            for i in range(self.numOfBatches):
+                random_index = self.batchSize*np.random.randint(self.numOfBatches)
+                xi = X[random_index:random_index + self.batchSize]
+                yi = y[random_index:random_index + self.batchSize]
+
+                dCdW_batch[i] = costFunctionPrime(xi,yi)
+
+
+        t0, t1 = 5, 50
+        def learning_schedule(t):
+            return t0/(t+t1)
+
+        for epoch in range(self.epochs):
+            self.epoch = epoch
+            self.backpropagate() 
 
             self.C.append(self.costFunction(trainX, trainY))
             self.testC.append(self.costFunction(testX, testY))
+
+            self.eta = learning_schedule(epoch)
 
     def MSE(self, y):
         mse = np.mean((y-self.yHat)**2)
@@ -235,8 +257,8 @@ if __name__=="__main__":
 
     # nodes = np.array([5, 7, 4])
     nodes = np.array([7, 5])
-    NN = Neural_Network(X_train, 2, nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000)
-    NN.train(X_train, y_train, X_test, y_test, method='GD')
+    NN = Neural_Network(X_train, 2, nodes, outputLayerSize=1, eta=0.001, lmd=0, momentum=0, epochs=1000)
+    NN.train(X_train, y_train, X_test, y_test, optimizer='Adam')
 
     """
     # Training the network

@@ -1,16 +1,13 @@
 
 import numpy as np
-from sklearn.linear_model import SGDRegressor
-import autograd.numpy as np
-from autograd import grad, elementwise_grad
 
-def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momentum: float, change: list, optimizer: str="None"):
+
+def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momentum: float, change: list, optimizer: str, RMS_W, RMS_B, M_W, M_B, epochNumber):
     """
     Args:
   
     """
 
-    ### Numerical ###
     if optimizer == "None":
         for i in range(len(W)):
 
@@ -18,69 +15,89 @@ def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momen
             W[i] = W[i] - change[i]
             B[i] = B[i] - eta * dCdB[i]
 
+
     if optimizer == "AdaGrad":
-        delta = 1e-8  # AdaGrad parameters to avoid possible zero division
+        delta = 1e-8  # AdaGrad parameter to avoid possible zero division
         for i in range(len(W)):
         
             # calculate outer product of gradients
             dCdW2 = dCdW[i] @ dCdW[i].T
             dCdB2 = dCdB[i] @ dCdB[i].T
             # algorithm with only diagonal elements
-            Ginverse_W = np.c_[eta/(delta + np.sqrt(np.diag(dCdW2)))]
-            Ginverse_B = np.c_[eta/(delta + np.sqrt(np.diag(dCdB2)))]
+            Ginverse_W = np.c_[eta / (np.sqrt(dCdW2) + delta)]
+            Ginverse_B = np.c_[eta / (np.sqrt(dCdB2) + delta)]
             
-            change = np.multiply(Ginverse_W,dCdW[i]) + momentum*change[i]
+            change[i] = np.multiply(Ginverse_W[0,0], dCdW[i]) + momentum * change[i]
             
             W[i] = W[i] - change[i]
-            B[i] = B[i] - np.multiply(Ginverse_B,dCdB[i])
+            B[i] = B[i] - np.multiply(Ginverse_B[0,0], dCdB[i])
 
 
-def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
-    n = len(x) # number of datapoints
+    if optimizer == "RMSprop":
+        delta = 1e-8
+        rho = 0.9  # moving average parameter, 0.9 is ususally recommended
+        for i in range(len(W)):
 
-    ### Analytical ###
-    theta_linreg = np.linalg.inv(X.T @ X) @ (X.T @ y)
-    print("analytical theta")
-    print(theta_linreg)
-
-    ### Scikit-learn ###
-    sgdreg = SGDRegressor(max_iter=50, penalty=None, eta0=0.1)
-    sgdreg.fit(x,y.ravel())
-    # print("scikit-learn theta")
-    # print(sgdreg.intercept_, sgdreg.coef_)
-
-    ### Numerical ###
-    H = (2.0/n)* X.T @ X
-    EigValues = np.linalg.eig(H)[0]
-    eta = 1.0/np.max(EigValues)
-    theta = np.random.rand(len(X[0]),1)  # len(X[0]) = number of parameters
-
-    # Stochastic part
-    n_epochs = 50
-    M = 5  # batch size
-    m = int(len(x)/M)  # number of batches
-
-    t0, t1 = 5, 50
-    def learning_schedule(t):
-        return t0/(t+t1)
-
-    ### maybe we should divide the batches before the loop? they should be the same for each epoch ###
-
-    change = 0
-    for epoch in range(n_epochs):
-        for i in range(m):
-            random_index = M*np.random.randint(m)
-            xi = X[random_index:random_index+M]
-            yi = y[random_index:random_index+M]
-
-            gradients = 2/M * xi.T @ ((xi @ theta) - yi)
-            eta = learning_schedule(epoch * m + i)
+            dCdW2 = dCdW[i] @ dCdW[i].T 
+            dCdB2 = dCdB[i] @ dCdB[i].T
             
-            change = eta*gradients + momentum*change
-            theta -= change
+            RMS_W[i] = rho * RMS_W[i] + (1 - rho) * dCdW2  
+            RMS_B[i] = rho * RMS_B[i] + (1 - rho) * dCdB2
 
-    # print("theta from SGD")
-    # print(theta)
+            Ginverse_W = np.c_[eta / (np.sqrt(RMS_W[i]) + delta)]  
+            Ginverse_B = np.c_[eta / (np.sqrt(RMS_B[i]) + delta)]
+            
+            change[i] = np.multiply(Ginverse_W[0,0], dCdW[i]) + momentum * change[i]
+
+            W[i] = W[i] - change[i]
+            B[i] = B[i] - np.multiply(Ginverse_B[0,0], dCdB[i])
+
+
+    if optimizer == "Adam":
+        delta = 1e-8
+        rho1, rho2 = 0.9, 0.999  # moving average parameter, 0.9 is ususally recommended
+        for i in range(len(W)):
+
+            dCdW2 = dCdW[i] @ dCdW[i].T  
+            dCdB2 = dCdB[i] @ dCdB[i].T
+            
+            # RMS
+            RMS_W[i] = rho2 * RMS_W[i] + (1 - rho2) * dCdW2  
+            RMS_B[i] = rho2 * RMS_B[i] + (1 - rho2) * dCdB2
+
+            # momentum
+            M_W[i] = rho1 * M_W[i] + (1 - rho1) * dCdW[i]
+            M_B[i] = rho1 * M_B[i] + (1 - rho1) * dCdB[i]
+
+            RMS_W_corr = RMS_W[i] / (1 - np.power(rho2, epochNumber + 1))  
+            RMS_B_corr = RMS_B[i] / (1 - np.power(rho2, epochNumber + 1)) 
+
+            M_W_corr = M_W[i] / (1 - np.power(rho1, epochNumber + 1))
+            M_B_corr = M_B[i] / (1 - np.power(rho1, epochNumber + 1))
+
+            Ginverse_W = np.c_[eta / (np.sqrt(RMS_W_corr) + delta)]  
+            Ginverse_B = np.c_[eta / (np.sqrt(RMS_B_corr) + delta)]
+            
+            change[i] = np.multiply(Ginverse_W[0,0], M_W_corr) + momentum * change[i]
+            W[i] = W[i] - change[i]
+            B[i] = B[i] - np.multiply(Ginverse_B[0,0], M_B_corr)
+
+    return W, B
+
+
+def stochastic_gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momentum: float, change: list, optimizer: str, RMS_W, RMS_B, M_W, M_B, epochNumber, batchSize, numOfBatches):
+   
+
+    random_index = M*np.random.randint(m)
+    xi = X[random_index:random_index+M]
+    yi = y[random_index:random_index+M]
+
+    for i in range(m):
+
+        gradients = 2/M * xi.T @ ((xi @ theta) - yi)
+        
+        change = eta*gradients + momentum*change
+        theta -= change
 
     # Autograd with AdaGrad, NOTE: we don't change eta here, why?
     weights = np.random.randn(len(X[0]),1)

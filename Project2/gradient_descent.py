@@ -226,6 +226,7 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
 
             # Taking the diagonal only and inverting
             Ginverse_w = np.c_[eta/(epsilon+np.sqrt(np.diagonal(v_dw_corr)))]
+            breakpoint()
             # Hadamard product
             theta -= np.multiply(Ginverse_w, m_dw)
             
