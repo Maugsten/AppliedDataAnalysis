@@ -12,14 +12,13 @@ from NN_gradient_descent_methods import *
 
 class Neural_Network(object):
     def __init__(self, X, numberOfHiddenLayers, nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=300, batchSize=10):        
-        # Define hyperparameters
-        self.X = X # Feature data
         
+        # define hyperparameters
+        self.X = X  # feature data
         self.inputLayerSize = np.shape(self.X)[1] # number of features
         self.outputLayerSize = outputLayerSize    # number of nodes in output layer
-
-        self.numberOfHiddenLayers = numberOfHiddenLayers
-        self.nodes = nodes # array with number of nodes in each hidden layer
+        self.numberOfHiddenLayers = numberOfHiddenLayers  # number of hidden layers
+        self.nodes = nodes  # array with number of nodes in each hidden layer
         
         ## initial Weights and biases for each layer ##
         self.W = []  # will be a nested list where each element is a matrix of weights for one layer
@@ -34,15 +33,12 @@ class Neural_Network(object):
                 w = np.random.randn(self.inputLayerSize, self.nodes[0])
                 self.W.append(w)
 
-                # column vector of biases 
+                # column vector of biases (one bias per node)
                 b = np.random.randn(self.nodes[0])
                 self.B.append(b)
 
             # hidden layers
             elif 0 < i < self.numberOfHiddenLayers:
-                # random number of nodes between 2 and 10
-                rand_num_nodes = np.random.randint(2,11)
-
                 # matrix of weights (previous number of nodes x current number of nodes)
                 w = np.random.randn(self.nodes[i-1], self.nodes[i])
                 self.W.append(w)
@@ -53,39 +49,47 @@ class Neural_Network(object):
             
             # output layer
             elif i == self.numberOfHiddenLayers:
+                # matrix of weights (previous number of nodes x number of nodes for output layer)
                 w = np.random.randn(self.nodes[-1], self.outputLayerSize)
                 self.W.append(w)
                 
+                # column vector of biases (one bias per node), usually one node in output layer which means one bias
                 b = np.random.randn(self.outputLayerSize)
                 self.B.append(b)
 
         # More hyperparameters
-        self.eta = eta              # Learning rate
-        self.momentum = momentum    # Momentum
-        self.lmd = lmd              # Regularization parameter
+        self.eta = eta              # learning rate
+        self.momentum = momentum    # momentum
+        self.lmd = lmd              # regularization parameter
         self.maxIterations = maxIterations  # number of iterations through the network
-        # self.iterationNumber = [i for i in range(self.maxIterations)]
-        self.change = [0 for i in range(self.numberOfHiddenLayers+1)]
+        self.change = [0 for i in range(self.numberOfHiddenLayers+1)]  # list of a variable that is needed in the gradient descent methods
 
-        # for RMSprop and Adam optimizer method
+        self.z = [0 for i in range(self.numberOfHiddenLayers+1)]  # list to store the data after multiplying it with weights and adding biases
+        self.a = [0 for i in range(self.numberOfHiddenLayers+1)]  # list to store the data after it has gone through an activation function
+
+        # for RMSprop and Adam optimizer methods
         self.RMS_W = [0 for i in range(self.numberOfHiddenLayers+1)]
         self.RMS_B = [0 for i in range(self.numberOfHiddenLayers+1)]
 
         # for Adam optimizer method
         self.M_W = [0 for i in range(self.numberOfHiddenLayers+1)]
         self.M_B = [0 for i in range(self.numberOfHiddenLayers+1)]
-        # self.epochNumber = [i for i in range(epochs)]
 
         # for stochastic gradinet descent
         self.epochs = epochs        
         self.batchSize = batchSize
         self.numOfBatches = int(np.shape(self.X)[0] / self.batchSize)
-        # breakpoint()
-        self.z = [0 for i in range(self.numberOfHiddenLayers+1)]
-        self.a = [0 for i in range(self.numberOfHiddenLayers+1)]
+        
 
     def forward(self, X):
-        """Propagate inputs through network"""
+        """Propagate inputs through network.
+        
+        Args:
+            - X (ndarray): input values
+
+        Returns:
+            - yHat (n x 1 array): predicted values
+        """
 
         for i in range(self.numberOfHiddenLayers+1):
 
@@ -103,47 +107,105 @@ class Neural_Network(object):
         return yHat
         
     def sigmoid(self, z):
+        """ The sigmoid function
+        
+        Args: 
+            - z (?): ?
+        """
         #Apply sigmoid activation function to scalar, vector, or matrix
         return 1/(1+np.exp(-z))
     
     def sigmoidPrime(self, z):
+        """ Derivative of sigmoid.
+        
+        Args: 
+            - z (?): ?
+
+        Returns:
+            - gradient of the sigmoid
+        """
         #Gradient of sigmoid
         return np.exp(-z)/((1+np.exp(-z))**2)
 
     def ReLU(self, z):
+        """ The ReLU function.
+        
+        Args:
+            - z (?): ?
+        """
         if z > 0:
             return z
         else: 
             return 0
     
     def ReLUPrime(self, z):
+        """ Derivative of ReLU
+        
+        Args:
+            - z (?): ?
+        """
         if z > 0:
             return 1
         else: 
             return 0
 
     def leakyReLU(self, z, a=0.01):
+        """ The leaky ReLU function. 
+        
+        Args:
+            - z (?): ?
+            - a (optional, float): ?
+
+        """
         if z > 0:
             return z
         else: 
             return a*z
 
     def leakyReLUPrime(self, z, a=0.01):
+        """ Derivative of leakyReLU
+        
+        Args:
+            - z (?): ?
+            - a (optional, float): ?
+
+        """
         if z > 0:
             return 1
         else: 
             return a
     
     def costFunction(self, X, y): 
-        #Compute cost for given X,y, use weights already stored in class.
+        """ Calculates the cost for a given model. 
+
+        Args:
+            - X (ndarray): 
+            - y (ndarray): 
+
+        Returns:
+            - C (float): the cost of the model ?        
+        """
+        
+        # prediction value
         self.yHat = self.forward(X)
+        # penalty ?
         regularization = sum([np.linalg.norm(self.W[i]) for i in range(len(self.W))])
         
         C = 0.5*sum((y-self.yHat)**2) + self.lmd*regularization
         return C
         
     def costFunctionPrime(self, X, y):
-        #Compute derivative with respect to W and B for a given X and y:
+        """ Computes the gradients in the network. 
+
+        Args:
+            - X (ndarray): 
+            - y (ndarray): 
+
+        Returns:
+            - dCdW (nested list?): list of gradients in terms of weights. Every element contains a list of gradients for one layer in the network ?
+            - dCdB (list?): list of gradients in terms of biases. Every element contains a gradient for one layer in the network ? 
+        """
+        #Compute derivative with respect to weights and biases for a given X and y:
         self.yHat = self.forward(X)
 
         delta = [0 for i in range(self.numberOfHiddenLayers+1)]
@@ -166,6 +228,14 @@ class Neural_Network(object):
         return dCdW, dCdB
 
     def backpropagate(self, trainX, trainY):
+        """ Updates the weights and biases of the neural network by using gradient descent methods.
+
+        Args: 
+            - trainX (ndarray): training data, independent variables
+            - trainY (ndarray): training data to fit
+
+        Returns: None
+        """
         dCdW, dCdB = self.costFunctionPrime(trainX, trainY)
 
         if self.method == 'GD':
@@ -183,65 +253,103 @@ class Neural_Network(object):
             exit()
 
     def train(self, trainX, trainY, testX, testY, method='GD', optimizer='None'):
+        """ Trains and tests the nerual network.
+
+        Args:
+            - self ?
+            - trainX (ndarray): training data, independent variables ? 
+            - trainY (ndarray): training data to fit
+            - testX (ndarray): test data, independent variables ?
+            - testY (ndarray): test data, dependent variables
+            - method (optional, str): choice of method, either GD (gradient descent, default) or SGD (stochastic gradient descent)
+            - optimizer (optional, str): choice of optimizer, either None (plain gradient descent, default), AdaGrad, RMSprop or Adam 
+
+        Returns: None
+        """
+        # method and optimizer
         self.method = method
         self.optimizer = optimizer
-
+        
+        # the splitted data
         self.trainX = trainX
         self.trainY = trainY
         self.testX = testX
         self.testY = testY
 
-        # Make empty list to store training costs:
+        # lists for storing training and test costs:
         self.C = []
         self.testC = []
 
         self.C.append(self.costFunction(trainX, trainY))
         self.testC.append(self.costFunction(testX, testY))
 
-        # tuning the learning rate as we iterate through the network
         t0, t1 = 5, 50
         def learning_schedule(t):
+            """ Tuning the learning rate.
+            Args:
+                - t (float)
+            Returns: 
+                - the learning rate
+            """
             return t0/(t+t1)
 
-
+        # gradient descent
         if self.method == 'GD':
             for iteration in range(self.maxIterations):
-                self.iteration = iteration
+                self.iteration = iteration  # needed in the gradient descent function
+
+                # updating weights and biases 
                 self.backpropagate(self.trainX, self.trainY) 
 
+                # storing the cost
                 self.C.append(self.costFunction(trainX, trainY))
                 self.testC.append(self.costFunction(testX, testY))
 
+                # updating the learing rate
                 self.eta = learning_schedule(iteration)
 
 
         # stochastic gradient descent
         if self.method == 'SGD':
-            
+            # lists for storing the batches
             Xbatches = [0 for i in range(self.numOfBatches)]
             Ybatches = [0 for i in range(self.numOfBatches)]
 
             for i in range(self.numOfBatches):
+                # picking a random index
+                random_index = self.batchSize * np.random.randint(self.numOfBatches)  
                 # create minibatches
-                random_index = self.batchSize * np.random.randint(self.numOfBatches)  # picking a random index
                 Xbatches[i] = self.trainX[random_index:random_index + self.batchSize]
                 Ybatches[i] = self.trainY[random_index:random_index + self.batchSize] 
 
             for epoch in range(self.epochs):
-                self.epoch = epoch
+                self.epoch = epoch  # needed in the gradient descent method
                 for i in range(self.numOfBatches):
+                    # updating weights and biases 
                     self.backpropagate(Xbatches[i], Ybatches[i])
 
+                    # storing the cost
                     self.C.append(self.costFunction(Xbatches[i], Ybatches[i]))
                     self.testC.append(self.costFunction(testX, testY))
 
+                    # updating the learing rate
                     self.eta = learning_schedule(epoch + i)
 
     def MSE(self, y):
+        """ Mean square error
+
+        Args:
+            - y
+        """
         mse = np.mean((y-self.yHat)**2)
         return mse
     
     def R2(self, y):
+        """ R2 score
+        
+        Args:
+            - y
+        """
         r2 = 1 - sum((y-self.yHat)**2) / sum((y-np.mean(y))**2) 
         return r2
 
@@ -253,13 +361,14 @@ if __name__=="__main__":
     n = 1000
     x = np.random.rand(n,1)
 
-    noise = np.random.normal(0, .01, (len(x),1))
-    y = 3 + 2*x + 3*x**2 #+ noise
+    noise = np.random.normal(0, .5, x.shape)
+    y = 3 + 2*x + 3*x**2 + noise
     # y = np.e**(-x**2) #+ noise
+    # y = np.sin(x) + noise
 
     # Scaling the data
     x = x/np.max(x)
-    y = y/np.max(y) #Max test score is 100
+    y = y/np.max(y)  # max test score is 100
 
     # print(np.shape(x))
     # print(np.shape(y))
@@ -290,8 +399,7 @@ if __name__=="__main__":
     
     x = np.linspace(0,1,n).reshape(1,-1).T
 
-    noise = np.random.normal(0, .5, (len(x)))
-    y = 3 + 2*x + 3*x**2 #+ noise    
+    y = 3 + 2*x + 3*x**2 + noise    
     # y = np.e**(-x**2) #+ noise
 
     x = x/np.max(x)
