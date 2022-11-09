@@ -99,9 +99,15 @@ class Neural_Network(object):
                 self.a[0] = self.sigmoid(self.z[0])
 
             # hidden layers
-            elif 0 < i <= self.numberOfHiddenLayers:
+            elif 0 < i < self.numberOfHiddenLayers:
                 self.z[i] = np.dot(self.a[i-1], self.W[i]) + self.B[i]
-                self.a[i] = self.sigmoid(self.z[i])         
+                self.a[i] = self.sigmoid(self.z[i])  
+
+            # output layer
+            elif i == self.numberOfHiddenLayers:
+                self.z[i] = np.dot(self.a[i-1], self.W[i]) + self.B[i]
+                self.a[i] = self.z[i]
+                # self.a[i] = self.leakyReLU(self.z[i])  # for classification
 
         yHat = self.a[-1]
         return yHat
@@ -133,10 +139,8 @@ class Neural_Network(object):
         Args:
             - z (?): ?
         """
-        if z > 0:
-            return z
-        else: 
-            return 0
+
+        return np.maximum(0, z)  # element-wise maximum of arrays elements, takes the maximum of 0 and the z-value
     
     def ReLUPrime(self, z):
         """ Derivative of ReLU
@@ -144,10 +148,8 @@ class Neural_Network(object):
         Args:
             - z (?): ?
         """
-        if z > 0:
-            return 1
-        else: 
-            return 0
+
+        return np.maximum(0, z)  # element-wise maximum of arrays elements, takes the maximum of 0 and the z-value
 
     def leakyReLU(self, z, a=0.01):
         """ The leaky ReLU function. 
@@ -157,10 +159,8 @@ class Neural_Network(object):
             - a (optional, float): ?
 
         """
-        if z > 0:
-            return z
-        else: 
-            return a*z
+
+        return np.where(z <= 0, a * z, z)  # where z <= 0, yield a*z, otherwise yield z
 
     def leakyReLUPrime(self, z, a=0.01):
         """ Derivative of leakyReLU
@@ -170,10 +170,8 @@ class Neural_Network(object):
             - a (optional, float): ?
 
         """
-        if z > 0:
-            return 1
-        else: 
-            return a
+
+        return np.where(z > 0, 1, a)  # where z > 0, yield 1, otherwise yield a
     
     def costFunction(self, X, y): 
         """ Calculates the cost for a given model. 
@@ -362,7 +360,7 @@ if __name__=="__main__":
     x = np.random.rand(n,1)
 
     noise = np.random.normal(0, .5, x.shape)
-    y = 3 + 2*x + 3*x**2 + noise
+    y = 3 + 2*x + 3*x**2 + 4*x**3 #+ noise
     # y = np.e**(-x**2) #+ noise
     # y = np.sin(x) + noise
 
@@ -378,7 +376,7 @@ if __name__=="__main__":
 
     # nodes = np.array([5, 7, 4])
     nodes = np.array([7, 5])
-    NN = Neural_Network(X_train, 2, nodes, outputLayerSize=1, eta=0.001, lmd=0, momentum=0, epochs=1000)
+    NN = Neural_Network(X_train, 2, nodes, outputLayerSize=1, eta=0.0001, lmd=0.0001, momentum=0, epochs=1000)
     NN.train(X_train, y_train, X_test, y_test, method='SGD', optimizer='Adam')
 
     """
@@ -399,7 +397,7 @@ if __name__=="__main__":
     
     x = np.linspace(0,1,n).reshape(1,-1).T
 
-    y = 3 + 2*x + 3*x**2 + noise    
+    y = 3 + 2*x + 3*x**2 + 4*x**3 #+ noise    
     # y = np.e**(-x**2) #+ noise
 
     x = x/np.max(x)
