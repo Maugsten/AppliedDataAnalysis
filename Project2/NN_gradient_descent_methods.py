@@ -2,7 +2,7 @@
 import numpy as np
 
 
-def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momentum: float, change: list, optimizer: str, RMS_W, RMS_B, M_W, M_B, iteration):
+def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momentum: float, change: list, optimizer: str, RMS_W, RMS_B, M_W, M_B, iteration, dCdW2, dCdB2):
     """
     Args:
   
@@ -16,16 +16,16 @@ def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momen
             B[i] = B[i] - eta * dCdB[i]
 
 
-    if optimizer == "AdaGrad":
+    if optimizer == "AdaGrad": 
         delta = 1e-8  # AdaGrad parameter to avoid possible zero division
         for i in range(len(W)):
         
             # calculate outer product of gradients
-            dCdW2 = dCdW[i] @ dCdW[i].T
-            dCdB2 = dCdB[i] @ dCdB[i].T
+            dCdW2[i] += dCdW[i] @ dCdW[i].T
+            dCdB2[i] += dCdB[i] @ dCdB[i].T
             # algorithm with only diagonal elements
-            Ginverse_W = np.c_[eta / (np.sqrt(dCdW2) + delta)]
-            Ginverse_B = np.c_[eta / (np.sqrt(dCdB2) + delta)]
+            Ginverse_W = np.c_[eta / (np.sqrt(dCdW2[i]) + delta)]
+            Ginverse_B = np.c_[eta / (np.sqrt(dCdB2[i]) + delta)]
             
             change[i] = np.multiply(Ginverse_W[0,0], dCdW[i]) + momentum * change[i]
             

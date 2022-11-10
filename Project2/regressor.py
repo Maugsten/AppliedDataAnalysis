@@ -67,6 +67,10 @@ class Neural_Network(object):
         self.z = [0 for i in range(self.numberOfHiddenLayers+1)]  # list to store the data after multiplying it with weights and adding biases
         self.a = [0 for i in range(self.numberOfHiddenLayers+1)]  # list to store the data after it has gone through an activation function
 
+        # for AdaGrad optimizer method
+        self.dCdW2 = [0 for i in range(self.numberOfHiddenLayers+1)]
+        self.dCdB2 = [0 for i in range(self.numberOfHiddenLayers+1)]
+
         # for RMSprop and Adam optimizer methods
         self.RMS_W = [0 for i in range(self.numberOfHiddenLayers+1)]
         self.RMS_B = [0 for i in range(self.numberOfHiddenLayers+1)]
@@ -237,12 +241,12 @@ class Neural_Network(object):
         dCdW, dCdB = self.costFunctionPrime(trainX, trainY)
 
         if self.method == 'GD':
-            updatedW, updatedB = gradient_descent(dCdW, dCdB, self.W, self.B, self.eta, self.momentum, self.change, self.optimizer, self.RMS_W, self.RMS_B, self.M_W, self.M_B, self.iteration)
+            updatedW, updatedB = gradient_descent(dCdW, dCdB, self.W, self.B, self.eta, self.momentum, self.change, self.optimizer, self.RMS_W, self.RMS_B, self.M_W, self.M_B, self.iteration, self.dCdW2, self.dCdB2)
             self.W = updatedW
             self.B = updatedB
 
         elif self.method == 'SGD':
-            updatedW, updatedB = gradient_descent(dCdW, dCdB, self.W, self.B, self.eta, self.momentum, self.change, self.optimizer, self.RMS_W, self.RMS_B, self.M_W, self.M_B, self.epoch)
+            updatedW, updatedB = gradient_descent(dCdW, dCdB, self.W, self.B, self.eta, self.momentum, self.change, self.optimizer, self.RMS_W, self.RMS_B, self.M_W, self.M_B, self.epoch, self.dCdW2, self.dCdB2)
             self.W = updatedW
             self.B = updatedB
         
@@ -376,8 +380,8 @@ if __name__=="__main__":
 
     # nodes = np.array([5, 7, 4])
     nodes = np.array([7, 5])
-    NN = Neural_Network(X_train, 2, nodes, outputLayerSize=1, eta=0.0001, lmd=0.0001, momentum=0, epochs=1000)
-    NN.train(X_train, y_train, X_test, y_test, method='SGD', optimizer='Adam')
+    NN = Neural_Network(X_train, 2, nodes, outputLayerSize=1, eta=0.01, lmd=0.0001, momentum=0, epochs=1000)
+    NN.train(X_train, y_train, X_test, y_test,method='SGD')#, method='SGD', optimizer='Adam')
 
     """
     # Training the network
