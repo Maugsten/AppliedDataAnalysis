@@ -373,8 +373,12 @@ if __name__=="__main__":
     # print(np.shape(x))
     # print(np.shape(y))
 
+    X = np.zeros((len(x), 2))
+    X[:,0] = x.reshape(1,-1)
+    X[:,1] = x.reshape(1,-1)**2
+
     # Splitting into train and test data
-    X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
     # nodes = np.array([5, 7, 4])
     nodes = np.array([7, 5])
