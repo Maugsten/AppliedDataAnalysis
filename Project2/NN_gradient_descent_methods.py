@@ -2,7 +2,7 @@
 import numpy as np
 
 
-def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momentum: float, change: list, optimizer: str, RMS_W, RMS_B, M_W, M_B, iteration):
+def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momentum: float, change: list, optimizer: str, RMS_W, RMS_B, M_W, M_B, iteration, dCdW2, dCdB2):
     """
     Args:
   
@@ -16,16 +16,16 @@ def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momen
             B[i] = B[i] - eta * dCdB[i]
 
 
-    if optimizer == "AdaGrad":
+    if optimizer == "AdaGrad": 
         delta = 1e-8  # AdaGrad parameter to avoid possible zero division
         for i in range(len(W)):
         
             # calculate outer product of gradients
-            dCdW2 = dCdW[i] @ dCdW[i].T
-            dCdB2 = dCdB[i] @ dCdB[i].T
+            dCdW2[i] += dCdW[i] @ dCdW[i].T
+            dCdB2[i] += dCdB[i] @ dCdB[i].T
             # algorithm with only diagonal elements
-            Ginverse_W = np.c_[eta / (np.sqrt(dCdW2) + delta)]
-            Ginverse_B = np.c_[eta / (np.sqrt(dCdB2) + delta)]
+            Ginverse_W = np.c_[eta / (np.sqrt(dCdW2[i]) + delta)]
+            Ginverse_B = np.c_[eta / (np.sqrt(dCdB2[i]) + delta)]
             
             change[i] = np.multiply(Ginverse_W[0,0], dCdW[i]) + momentum * change[i]
             
@@ -38,11 +38,11 @@ def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momen
         rho = 0.9  # moving average parameter, 0.9 is ususally recommended
         for i in range(len(W)):
 
-            dCdW2 = dCdW[i] @ dCdW[i].T 
-            dCdB2 = dCdB[i] @ dCdB[i].T
+            dCdW2_ = dCdW[i] @ dCdW[i].T 
+            dCdB2_ = dCdB[i] @ dCdB[i].T
             
-            RMS_W[i] = rho * RMS_W[i] + (1 - rho) * dCdW2  
-            RMS_B[i] = rho * RMS_B[i] + (1 - rho) * dCdB2
+            RMS_W[i] = rho * RMS_W[i] + (1 - rho) * dCdW2_  
+            RMS_B[i] = rho * RMS_B[i] + (1 - rho) * dCdB2_
 
             Ginverse_W = np.c_[eta / (np.sqrt(RMS_W[i]) + delta)]  
             Ginverse_B = np.c_[eta / (np.sqrt(RMS_B[i]) + delta)]
@@ -58,12 +58,12 @@ def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momen
         rho1, rho2 = 0.9, 0.999  # moving average parameter, 0.9 is ususally recommended
         for i in range(len(W)):
 
-            dCdW2 = dCdW[i] @ dCdW[i].T  
-            dCdB2 = dCdB[i] @ dCdB[i].T
+            dCdW2_ = dCdW[i] @ dCdW[i].T  
+            dCdB2_ = dCdB[i] @ dCdB[i].T
             
             # RMS
-            RMS_W[i] = rho2 * RMS_W[i] + (1 - rho2) * dCdW2  
-            RMS_B[i] = rho2 * RMS_B[i] + (1 - rho2) * dCdB2
+            RMS_W[i] = rho2 * RMS_W[i] + (1 - rho2) * dCdW2_  
+            RMS_B[i] = rho2 * RMS_B[i] + (1 - rho2) * dCdB2_
 
             # momentum
             M_W[i] = rho1 * M_W[i] + (1 - rho1) * dCdW[i]
