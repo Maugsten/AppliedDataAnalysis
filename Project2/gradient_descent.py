@@ -8,7 +8,8 @@ from functions import *
 np.random.seed(2)
 
 def CostFunc(y, X, theta, lmd=0):
-    return np.sum((y - X @ theta)**2) + lmd*theta**2
+    # return np.sum((y - X @ theta)**2) + lmd*theta**2
+    return np.sum((y - X @ theta) @ (y - X @ theta).T) #+ lmd*theta**2
 
 def check_convergence(w_prev,w_current):
     return np.array_equal(w_prev,w_current)
@@ -30,12 +31,12 @@ def gradient_descent(X, x, y, momentum=0, lmd=0):
     ### Analytical ###
     I = n*lmd* np.eye(XT_X.shape[0])
     theta_linreg = np.linalg.inv(XT_X + I) @ X.T @ y
-    # print("analytical theta")
-    # print(theta_linreg)
+    print("analytical theta")
+    print(theta_linreg)
 
-    ### Scikit-learn ###
-    sgdreg = SGDRegressor(max_iter = 50, penalty=None, eta0=0.1)
-    sgdreg.fit(x,y.ravel())
+    # ### Scikit-learn ###
+    # sgdreg = SGDRegressor(max_iter = 50, penalty=None, eta0=0.1)
+    # sgdreg.fit(x,y.ravel())
     # print("scikit-learn theta")
     # print(sgdreg.intercept_, sgdreg.coef_)
 
@@ -60,37 +61,37 @@ def gradient_descent(X, x, y, momentum=0, lmd=0):
         change = eta*gradient + momentum*change
         theta -= change
 
-    # print("theta from GD")
-    # print(theta)
-
-    # Autograd with AdaGrad
-    theta = np.random.randn(len(X[0]),1) # initial guess for parameters
-    training_gradient = elementwise_grad(CostFunc,2)
-    delta = 1e-8  # AdaGrad parameters to avoid possible zero division
-    Giter = np.zeros((3,3))
-    for _ in range(iterations):
-        gradient = training_gradient(y,X,theta)
-        # calculate outer product of gradients
-        Giter += gradient @ gradient.T
-        # algorithm with only diagonal elements
-        Ginverse = np.c_[eta/(delta + np.sqrt(np.diag(Giter)))]
-        
-        change = np.multiply(Ginverse,gradient) + momentum*change
-        theta -= change
-
-    print("theta from GD with AdaGrad")
+    print("theta from GD")
     print(theta)
+
+    # # Autograd with AdaGrad
+    # theta = np.random.randn(len(X[0]),1) # initial guess for parameters
+    # training_gradient = elementwise_grad(CostFunc,2)
+    # delta = 1e-8  # AdaGrad parameters to avoid possible zero division
+    # Giter = np.zeros((3,3))
+    # for _ in range(iterations):
+    #     gradient = training_gradient(y,X,theta)
+    #     # calculate outer product of gradients
+    #     Giter += gradient @ gradient.T
+    #     # algorithm with only diagonal elements
+    #     Ginverse = np.c_[eta/(delta + np.sqrt(np.diag(Giter)))]
+        
+    #     change = np.multiply(Ginverse,gradient) + momentum*change
+    #     theta -= change
+
+    # print("theta from GD with AdaGrad")
+    # print(theta)
 
 
 def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
     n = len(x) # number of datapoints
 
-    ### Analytical ###
-    # theta_linreg = np.linalg.inv(X.T @ X) @ (X.T @ y)
-    # print("analytical theta")
-    # print(theta_linreg)
+    ## Analytical ###
+    theta_linreg = np.linalg.inv(X.T @ X) @ (X.T @ y)
+    print("analytical theta")
+    print(theta_linreg)
 
-    ### Scikit-learn ###
+    # ## Scikit-learn ###
     # sgdreg = SGDRegressor(max_iter=50, penalty=None, eta0=0.1)
     # sgdreg.fit(x,y.ravel())
     # print("scikit-learn theta")
@@ -124,38 +125,38 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
             eta = learning_schedule(epoch * m + i)
             
             change = eta*gradients + momentum*change
-            breakpoint()
+            # breakpoint()
             theta -= change
 
     # print("theta from SGD")
     # print(theta)
 
-    # Autograd with AdaGrad, NOTE: we don't change eta here, why?
-    theta = np.random.randn(len(X[0]),1)
-    eta = 1.0/np.max(EigValues)
+    # # Autograd with AdaGrad, NOTE: we don't change eta here, why?
+    # theta = np.random.randn(len(X[0]),1)
+    # eta = 1.0/np.max(EigValues)
     training_gradient = elementwise_grad(CostFunc,2)  # 2 means we are differentiating with respect to theta
     
-    delta = 1e-8  # AdaGrad parameters to avoid possible zero division
-    change = 0
-    for epoch in range(n_epochs):
-        grad_squared = np.zeros(shape=(3,3))
-        for i in range(m):
-            random_index = M*np.random.randint(m)  # why does Morten multiply with M?
-            xi = X[random_index:random_index+M]
-            yi = y[random_index:random_index+M]
+    # delta = 1e-8  # AdaGrad parameters to avoid possible zero division
+    # change = 0
+    # for epoch in range(n_epochs):
+    #     grad_squared = np.zeros(shape=(3,3))
+    #     for i in range(m):
+    #         random_index = M*np.random.randint(m)  # why does Morten multiply with M?
+    #         xi = X[random_index:random_index+M]
+    #         yi = y[random_index:random_index+M]
 
-            gradient = (1.0/M)*training_gradient(yi, xi, theta)  # last time we scaled with 2/M, what is correct?
+    #         gradient = (1.0/M)*training_gradient(yi, xi, theta)  # last time we scaled with 2/M, what is correct?
             
-            # gradient squared
-            grad_squared += gradient @ gradient.T
+    #         # gradient squared
+    #         grad_squared += gradient @ gradient.T
 
-            Ginverse = np.c_[eta/(delta + np.sqrt(np.diag(grad_squared)))]
-            change = np.multiply(Ginverse,gradient) + momentum*change
+    #         Ginverse = np.c_[eta/(delta + np.sqrt(np.diag(grad_squared)))]
+    #         change = np.multiply(Ginverse,gradient) + momentum*change
             
-            theta -= change
+    #         theta -= change
 
-    print("theta from SGD with AdaGrad")
-    print(weights)
+    # print("theta from SGD with AdaGrad")
+    # print(weights)
 
     # Autograd with RMSprop, NOTE: we don't change eta here, why?
     weights = np.random.randn(len(X[0]),1)
@@ -182,8 +183,8 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
             # if check_convergence(old_weights, weights):
             #     print(f"converged after {epoch} epochs and {i} iterations")
 
-    # print("theta from SGD with RMSprop")
-    # print(weights)
+    print("theta from SGD with RMSprop")
+    print(weights)
 
     # Adam
     # picking initially random weights and biases
@@ -233,38 +234,38 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
             theta -= np.multiply(Ginverse_w, m_dw)
             
         # print(epoch, theta)
-    # print("theta from SGD with Adam")
-    # print(theta)
+    print("theta from SGD with Adam")
+    print(theta)
 
 if __name__ == "__main__":
 
     ### check gradient descent ###
-    # n = 1000
+    n = 1000
 
-    # x = 2*np.random.rand(n,1)
+    x = 2*np.random.rand(n,1)
     # # y = 4+3*x+np.random.randn(n,1)
     
-    # y = 1 + 2*x + 3*x**2
-    # X = np.c_[np.ones((n,1)), x, x**2]
+    y = 1 + 2*x + 3*x**2
+    X = np.c_[np.ones((n,1)), x, x**2]
 
-    x = np.arange(0, 1, 0.05)
-    y = np.arange(0, 1, 0.05)
-    x, y = np.meshgrid(x, y) 
+    # x = np.arange(0, 1, 0.05)
+    # y = np.arange(0, 1, 0.05)
+    # x, y = np.meshgrid(x, y) 
 
     sigma = .1  # Standard deviation of the noise
     lmd = .01
     n = 8  # polynomial degree
 
     # Franke function with stochastic noise
-    z = FrankeFunction(x, y) + np.random.normal(0, sigma, x.shape)
+    # z = FrankeFunction(x, y) + np.random.normal(0, sigma, x.shape)
     # z = z.flatten().reshape(-1,1)
-    X = create_X(x,y,n)
+    # X = create_X(x,y,n)
     # breakpoint()
 
-    # gradient_descent(X,x,y)
-    # gradient_descent(X,x,y,momentum=0.03)
-    # gradient_descent(X,x,y,momentum=0.03,lmd=1e-3)
-    stochastic_gradient_descent(X,x,z)
-    # stochastic_gradient_descent(X,x,y,momentum=0.03)
-    # stochastic_gradient_descent(X,x,y,momentum=0.03,lmd=1e-3)
+    # gradient_descent(X,x,y); print('\n')
+    # gradient_descent(X,x,y,momentum=0.03); print('\n')
+    # gradient_descent(X,x,y,momentum=0.03,lmd=1e-3); print('\n')
+    stochastic_gradient_descent(X,x,y); print('\n')
+    stochastic_gradient_descent(X,x,y,momentum=0.03); print('\n')
+    stochastic_gradient_descent(X,x,y,momentum=0.03,lmd=1e-3); print('\n')
 
