@@ -4,7 +4,7 @@ from sklearn.linear_model import SGDRegressor
 import autograd.numpy as np
 from autograd import grad, elementwise_grad
 
-np.random.seed(10)
+np.random.seed(2)
 
 def CostFunc(y, X, theta, lmd=0):
     return np.sum((y - X @ theta)**2) + lmd*theta**2
@@ -65,10 +65,11 @@ def gradient_descent(X, x, y, momentum=0, lmd=0):
     theta = np.random.randn(len(X[0]),1) # initial guess for parameters
     training_gradient = elementwise_grad(CostFunc,2)
     delta = 1e-8  # AdaGrad parameters to avoid possible zero division
+    Giter = np.zeros((3,3))
     for _ in range(iterations):
         gradient = training_gradient(y,X,theta)
         # calculate outer product of gradients
-        Giter = gradient @ gradient.T
+        Giter += gradient @ gradient.T
         # algorithm with only diagonal elements
         Ginverse = np.c_[eta/(delta + np.sqrt(np.diag(Giter)))]
         
@@ -175,61 +176,59 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
 
     # Adam
     # picking initially random weights and biases
-    # weights = np.random.randn(len(X[0,1:]),1)
+    theta = np.random.randn(len(X[0]),1)
+    #weights = np.random.randn(len(X[0,1:]),1)
     # bias = np.random.randn(1,1)
-    # # mean and uncentered variance from the previous time step of the gradients of the parameters
-    # m_dw, m_db, v_dw, v_db = 0, 0, 0, 0 
-    # rho1, rho2 = 0.9, 0.999
-    # epsilon = 1e-8  # to prevent zero-division
+    #bias = 2.8
+    # mean and uncentered variance from the previous time step of the gradients of the parameters
+    m_dw, v_dw = 0, 0 
+    rho1, rho2 = 0.9, 0.999
+    epsilon = 0 #1e-14  # to prevent zero-division
 
-    # for epoch in range(n_epochs):
-    #     m_dw = np.zeros(shape=(3,1))
-    #     m_db = np.zeros(shape=(3,1))
-    #     v_dw = np.zeros(shape=(3,1))
-    #     v_db = np.zeros(shape=(3,1))
-    #     for i in range(m):
-    #         random_index = M*np.random.randint(m)  # why does Morten multiply with M?
-    #         xi = X[random_index:random_index+M]
-    #         yi = y[random_index:random_index+M]
+    # these parameters gave the exact solution for the test function
+    eta = 0.001
+    n_epochs = 300
+    M = 5
+    m = int(len(x)/M)
 
-    #         # calculating the gradient in terms of weights and biases
-    #         grad_w = (1.0/M)*training_gradient(yi, xi, weights)
-    #         grad_b = (1.0/M)*training_gradient(yi, xi, bias)
+    m_dw = 0
+    v_dw = 0
+    for epoch in range(n_epochs):
+        for i in range(m):
+            random_index = M*np.random.randint(m)  # why does Morten multiply with M?
+            xi = X[random_index:random_index+M]
+            yi = y[random_index:random_index+M]
 
-    #         prev_m_dw = m_dw
-    #         prev_m_db = m_db
-    #         prev_v_dw = v_dw
-    #         prev_v_db = v_db
+            # calculating the gradient in terms of weights and biases
+            grad_theta = (1.0/M)*training_gradient(yi, xi, theta)
+            grad_theta2 = grad_theta @ grad_theta.T
 
-    #         ## momentum ##
-    #         # weights
-    #         m_dw = rho1*prev_m_dw + (1-rho1)*grad_w
-    #         # biases
-    #         m_db = rho1*prev_m_db + (1-rho1)*grad_b
+            prev_m_dw = m_dw
+            prev_v_dw = v_dw
 
-    #         ## rms ##
-    #         # weights
-    #         v_dw = rho2*prev_v_dw + (1-rho2)*(grad_w**2)
-    #         # biases
-    #         v_db = rho2*prev_v_db + (1-rho2)*(grad_b**2)
+            ## momentum ##
+            m_dw = rho1*prev_m_dw + (1-rho1)*grad_theta
 
-    #         # bias correction
-    #         m_dw_corr = m_dw / (1-rho1**i)
-    #         m_db_corr = m_db / (1-rho1**i)
-    #         v_dw_corr = v_dw / (1-rho2**i)
-    #         v_db_corr = v_db / (1-rho2**i)
+            ## rms ##
+            v_dw = rho2*prev_v_dw + (1-rho2)*grad_theta2
 
-    #         # updating the parameters
-    #         weights -= eta*(m_dw_corr/(np.sqrt(v_dw_corr)+epsilon))
-    #         bias -= eta*(m_db_corr/(np.sqrt(v_db_corr)+epsilon))
+            # bias correction
+            v_dw_corr = v_dw / (1-rho2**(epoch+1))
 
-    # print("theta from SGD with Adam")
-    # print(weights, bias)
+            # Taking the diagonal only and inverting
+            Ginverse_w = np.c_[eta/(epsilon+np.sqrt(np.diagonal(v_dw_corr)))]
+           
+            # Hadamard product
+            theta -= np.multiply(Ginverse_w, m_dw)
+            
+        # print(epoch, theta)
+    print("theta from SGD with Adam")
+    print(theta)
 
 if __name__ == "__main__":
 
     ### check gradient descent ###
-    n = 100
+    n = 1000
 
     x = 2*np.random.rand(n,1)
     # y = 4+3*x+np.random.randn(n,1)
@@ -237,9 +236,9 @@ if __name__ == "__main__":
     y = 3 + 2*x + 3*x**2
     X = np.c_[np.ones((n,1)), x, x**2]
 
-    # gradient_descent(X,x,y)
+    gradient_descent(X,x,y)
     # gradient_descent(X,x,y,momentum=0.03)
     # gradient_descent(X,x,y,momentum=0.03,lmd=1e-3)
-    stochastic_gradient_descent(X,x,y)
+    # stochastic_gradient_descent(X,x,y)
     # stochastic_gradient_descent(X,x,y,momentum=0.03)
     # stochastic_gradient_descent(X,x,y,momentum=0.03,lmd=1e-3)
