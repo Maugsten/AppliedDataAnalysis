@@ -363,8 +363,9 @@ def ordinary_least_squares(x, y, z, polydeg=5, startdeg=1, resampling='None', k=
             for j in range(len(X_test[0,:])):
                 X_test[:,j] = (X_test[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j]))   # Normalization
                 X_train[:,j] = (X_train[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j])) # Normalization
-            z_test = (z_test - np.mean(z_train))/np.std(z_train)   # Standardization
-            z_train = (z_train - np.mean(z_train))/np.std(z_train) # Standardization
+            z_test = (z_test - np.amin(z_train)) / (np.amax(z_train) - np.amin(z_train))   # Normalization
+            z_train = (z_train - np.amin(z_train)) / (np.amax(z_train) - np.amin(z_train)) # Normalization
+            """ LEGG MERKE TIL NORMALISERING HER! """
         
             # OLS with SVD
             betas = svd_algorithm(X_train, z_train)
@@ -387,8 +388,8 @@ def ordinary_least_squares(x, y, z, polydeg=5, startdeg=1, resampling='None', k=
     z_scaled = (z_ - np.mean(z_))/np.std(z_)
     z_tilde = X @ svd_algorithm(X, z_scaled)
 
-    make_plots(x,y,z,z_scaled,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
-    # return MSE_test, parameters
+    # make_plots(x,y,z,z_scaled,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
+    return MSE_test#, parameters
 
 
 def ridge(x, y, z, lmd, polydeg=5, startdeg=1, resampling='None', k=10):
@@ -746,3 +747,38 @@ def lasso(x, y, z, lmd, polydeg=5, startdeg=1, resampling='None', k=10):
 
     make_plots(x,y,z,z_scaled,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
     # return MSE_test, parameters
+
+if __name__=="__main__":
+    mse_no = np.zeros(7)
+    mse_bs = np.zeros(10)
+    mse_cv = np.zeros(10)
+
+    # np.random.seed(1998)  # Sets seed so results can be reproduced.
+
+    # Defines domain. No need to scale this data as it's already in the range (0,1)
+    x = np.arange(0, 1, 0.05)
+    y = np.arange(0, 1, 0.05)
+    x, y = np.meshgrid(x, y) 
+
+    sigma = .1  # Standard deviation of the noise
+
+    # Franke function with stochastic noise
+
+    """ Each run below runs a regression of the Franke function. """
+    # OLS regression
+
+
+    n = 1000
+    for i in range(n):
+        z = FrankeFunction(x, y) + np.random.normal(0, sigma, x.shape)
+        mse_no += ordinary_least_squares(x, y, z, polydeg=10, startdeg=4, resampling='None')            # No resampling
+        # mse_bs += ordinary_least_squares(x, y, z, polydeg=10, startdeg=6, resampling='Bootstrap')       # Bootstrapping
+        # mse_cv += ordinary_least_squares(x, y, z, polydeg=10, startdeg=6, resampling='CrossValidation') # 10-fold Cross-Validation
+
+    mse_no /= n
+    mse_bs /= n
+    mse_cv /= n
+
+    print(mse_no)
+    print(mse_bs)
+    print(mse_cv)

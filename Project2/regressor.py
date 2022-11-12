@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from NN_gradient_descent_methods import *
+from functions import *
 
 
 class Neural_Network(object):
@@ -343,7 +344,8 @@ class Neural_Network(object):
         Args:
             - y
         """
-        mse = np.mean((y-self.yHat)**2)
+        # mse = np.mean((y-self.yHat)**2)
+        mse = np.mean(np.mean((y - self.yHat)**2, axis=1, keepdims=True))
         return mse
     
     def R2(self, y):
@@ -357,6 +359,133 @@ class Neural_Network(object):
 
 
 if __name__=="__main__":
+    """ In this section, we set up the data we want to analyse. This includes computing, reshaping and scaling the data. """
+    print("Score to beat:  ", 0.00768127)
+
+    # Sets seed so results can be reproduced.
+    # np.random.seed(1998)  
+
+    # Defines domain. No need to scale this data as it's already in the range (0,1)
+    x = np.arange(0, 1, 0.05)
+    y = np.arange(0, 1, 0.05)
+    x, y = np.meshgrid(x, y) 
+
+    # Standard deviation of the noise
+    sigma = .1  
+
+    # Franke function with stochastic noise
+    z = FrankeFunction(x, y) + np.random.normal(0, sigma, x.shape)
+    m, n = np.shape(z)
+    z_ = z.reshape(-1,1)
+
+    # Feature matrix
+    X = np.zeros((len(x)**2, 2))
+    X[:,0] = x.flatten()
+    X[:,1] = y.flatten()
+
+    # Splitting into train and test data
+    X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
+
+    # Scaling
+    for j in range(len(X_test[0,:])):
+        X_test[:,j] = (X_test[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j]))   # Normalization
+        X_train[:,j] = (X_train[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j])) # Normalization
+    z_test = (z_test - np.amin(z_train)) / (np.amax(z_train) - np.amin(z_train))   # Normalization
+    z_train = (z_train - np.amin(z_train)) / (np.amax(z_train) - np.amin(z_train)) # Normalization
+
+    """ Our basic network """
+    nodes = np.array([50, 50, 50])
+    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
+    NN.train(X_train, z_train, X_test, z_test, method='SGD')
+
+    mse = NN.MSE(z_test)
+    print("Neural Network: ", mse)
+
+    
+
+    """ In this section, we vary the number of hidden layers. """
+    # n = 8
+    # MSE = np.zeros(n)
+    # for i in range(n):
+    #     nodes = np.array([50 for j in range(i+1)])
+    #     print(nodes)
+    #     NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
+    #     NN.train(X_train, z_train, X_test, z_test, method='SGD')
+    #     MSE[i] = NN.MSE(z_test)
+    
+    # for i in range(len(MSE)):
+    #     print(MSE[i])
+
+    """ In this section, we vary the number of hidden layers. """
+    nodeNumber = [1, 2, 3, 4, 5, 6, 7, 8]
+    MSE = np.zeros(len(nodeNumber))
+    for i in range(len(nodeNumber)):
+        nodes = np.array([10*nodeNumber[i], 10*nodeNumber[i], 10*nodeNumber[i]])
+        print(nodes)
+        NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=10)
+        NN.train(X_train, z_train, X_test, z_test, method='SGD')
+        MSE[i] = NN.MSE(z_test)
+    
+    for i in range(len(MSE)):
+        print(MSE[i])
+
+
+    """ In this section, we post-process our findings. """
+    # MSE
+    mse = NN.MSE(z_test)
+    print("Neural Network: ", mse)
+
+    
+    zHat = NN.forward(X).reshape((m,n))
+    fig = plt.figure(figsize=plt.figaspect(0.5), constrained_layout=True)
+    ax1 = fig.add_subplot(1, 2, 1, projection='3d')
+    ax2 = fig.add_subplot(1, 2, 2, projection='3d')
+
+    surf1 = ax1.plot_surface(x, y, z, cmap=cm.coolwarm,
+                            linewidth=0, antialiased=False)
+    surf2 = ax2.plot_surface(x, y, zHat, cmap=cm.coolwarm,
+                            linewidth=0, antialiased=False)
+
+    ax1.set_zlim(np.amin(z), np.amax(z))
+    ax1.zaxis.set_major_locator(LinearLocator(10))
+    ax1.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+    ax1.set_xlabel('x')
+    ax1.set_ylabel('y')
+    ax1.yaxis._axinfo['label']
+    ax1.set_zlabel('z')
+    ax1.set_title("Original Data")
+
+    ax2.set_zlim(np.amin(z), np.amax(z))
+    ax2.zaxis.set_major_locator(LinearLocator(10))
+    ax2.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+    ax2.set_xlabel('x')
+    ax2.set_ylabel('y')
+    ax2.yaxis._axinfo['label']
+    ax2.set_zlabel('z')
+    ax2.set_title("Neural Network Fit")
+    fig.colorbar(surf1, shrink=0.5, aspect=10)
+
+    # Plotting results
+    plt.figure(figsize=(6,4))
+    plt.plot(NN.C, label='Train Data')
+    plt.plot(NN.testC, label='Test Data')
+    plt.grid()
+    plt.title('Training our neural network')
+    plt.xlabel('Iterations')
+    plt.ylabel('Cost')
+    plt.legend()
+    plt.show()
+
+
+
+    """ THIS IS THE WINNER SO FAR! MSE=0.005246113511425173 """
+    # nodes = np.array([70, 70, 70, 70, 70, 70])
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD')#, method='SGD', optimizer='Adam')
+
+
+
+    """ OLD CODE
     np.random.seed(10)
     
     # Setting the data
@@ -379,18 +508,22 @@ if __name__=="__main__":
     X[:,0] = x.reshape(1,-1)
     X[:,1] = x.reshape(1,-1)**2
 
+    print(np.shape(X))
+    print(np.shape(y))
     # Splitting into train and test data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-
+    print(np.shape(X_train))
+    print(np.shape(y_train))
+    
     # nodes = np.array([5, 7, 4])
     nodes = np.array([7, 5])
     NN = Neural_Network(X_train, 2, nodes, outputLayerSize=1, eta=0.01, lmd=0.0001, momentum=0, epochs=1000)
     NN.train(X_train, y_train, X_test, y_test,method='SGD')#, method='SGD', optimizer='Adam')
 
     """
-    # Training the network
-    NN = Neural_Network()
-    NN.train(X_train, y_train, X_test, y_test, method='GD')
+    # # Training the network
+    # NN = Neural_Network()
+    # NN.train(X_train, y_train, X_test, y_test, method='GD')
     """
     # Plotting results
     plt.figure(figsize=(6,4))
@@ -420,4 +553,4 @@ if __name__=="__main__":
     plt.ylabel('y')
     plt.legend()
     plt.show()
-    
+    """
