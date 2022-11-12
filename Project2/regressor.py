@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from NN_gradient_descent_methods import *
-from functions import *
+from project1_functions import *
 
 
 class Neural_Network(object):
@@ -67,18 +67,6 @@ class Neural_Network(object):
 
         self.z = [0 for i in range(self.numberOfHiddenLayers+1)]  # list to store the data after multiplying it with weights and adding biases
         self.a = [0 for i in range(self.numberOfHiddenLayers+1)]  # list to store the data after it has gone through an activation function
-
-        # for AdaGrad optimizer method
-        self.dCdW2 = [0 for i in range(self.numberOfHiddenLayers+1)]
-        self.dCdB2 = [0 for i in range(self.numberOfHiddenLayers+1)]
-
-        # for RMSprop and Adam optimizer methods
-        self.RMS_W = [0 for i in range(self.numberOfHiddenLayers+1)]
-        self.RMS_B = [0 for i in range(self.numberOfHiddenLayers+1)]
-
-        # for Adam optimizer method
-        self.M_W = [0 for i in range(self.numberOfHiddenLayers+1)]
-        self.M_B = [0 for i in range(self.numberOfHiddenLayers+1)]
 
         # for stochastic gradinet descent
         self.epochs = epochs        
@@ -247,6 +235,7 @@ class Neural_Network(object):
             self.B = updatedB
 
         elif self.method == 'SGD':
+            # NB: the gradient descent function is the same for both GD and SGD, the stochastic part happens in the neural network 
             updatedW, updatedB = gradient_descent(dCdW, dCdB, self.W, self.B, self.eta, self.momentum, self.change, self.optimizer, self.RMS_W, self.RMS_B, self.M_W, self.M_B, self.epoch, self.dCdW2, self.dCdB2)
             self.W = updatedW
             self.B = updatedB
@@ -295,9 +284,29 @@ class Neural_Network(object):
                 - the learning rate
             """
             return t0/(t+t1)
+            
+        # for AdaGrad
+        dCdW2 = [0 for i in range(self.numberOfHiddenLayers+1)]
+        dCdB2 = [0 for i in range(self.numberOfHiddenLayers+1)]
+
+        # for RMSProp and Adam
+        RMS_W = [0 for i in range(self.numberOfHiddenLayers+1)]
+        RMS_B = [0 for i in range(self.numberOfHiddenLayers+1)]
+
+        # for Adam
+        M_W = [0 for i in range(self.numberOfHiddenLayers+1)]
+        M_B = [0 for i in range(self.numberOfHiddenLayers+1)]
 
         # gradient descent
         if self.method == 'GD':
+
+            self.dCdW2 = dCdW2
+            self.dCdB2 = dCdB2
+            self.RMS_W = RMS_W
+            self.RMS_B = RMS_B
+            self.M_W = M_W
+            self.M_B = M_B
+
             for iteration in range(self.maxIterations):
                 self.iteration = iteration  # needed in the gradient descent function
 
@@ -314,6 +323,7 @@ class Neural_Network(object):
 
         # stochastic gradient descent
         if self.method == 'SGD':
+            
             # lists for storing the batches
             Xbatches = [0 for i in range(self.numOfBatches)]
             Ybatches = [0 for i in range(self.numOfBatches)]
@@ -327,6 +337,15 @@ class Neural_Network(object):
 
             for epoch in range(self.epochs):
                 self.epoch = epoch  # needed in the gradient descent method
+
+                # resetting these parameters between each epoch to avoid overflow error
+                self.dCdW2 = dCdW2
+                self.dCdB2 = dCdB2
+                self.RMS_W = RMS_W
+                self.RMS_B = RMS_B
+                self.M_W = M_W
+                self.M_B = M_B
+
                 for i in range(self.numOfBatches):
                     # updating weights and biases 
                     self.backpropagate(Xbatches[i], Ybatches[i])
@@ -344,7 +363,6 @@ class Neural_Network(object):
         Args:
             - y
         """
-        # mse = np.mean((y-self.yHat)**2)
         mse = np.mean(np.mean((y - self.yHat)**2, axis=1, keepdims=True))
         return mse
     
