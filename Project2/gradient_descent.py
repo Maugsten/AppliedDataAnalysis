@@ -12,13 +12,14 @@ np.random.seed(2)
 def CostFunc(y, X, theta, lmd=0):
     return np.sum((y - X @ theta) @ (y - X @ theta).T) + lmd*(theta @ theta.T)
 
-def gradientFunc(X,y,theta, lmd=0):
+def gradientFunc(X,y,theta,n,lmd=0):
     return (2.0/n) * X.T @ (X @ (theta) - y) + 2 * lmd * theta
 
  # update the learning rate
 t0, t1 = 5, 50
 def learning_schedule(t):
     return t0/(t+t1)
+
 
 def MSE(y, y_predict):
     """ Mean square error
@@ -62,7 +63,7 @@ def gradient_descent(X, x, y, momentum=0, lmd=0):
     iterations = 1000
     theta_initial = np.random.randn(len(X[0]),1) # initial guess for parameters
     theta = theta_initial
-    training_gradient = elementwise_grad(CostFunc,2)
+    tol = 10**4  # tolerance for gradient clipping
 
     # storing the predicted y values
     cost = [0 for i in range(iterations+1)]
@@ -72,17 +73,19 @@ def gradient_descent(X, x, y, momentum=0, lmd=0):
     change = 0
     for i in range(iterations):
 
-        gradient = (2.0/n) * X.T @ (X @ (theta) - y) + 2 * lmd * theta
-        # gradient = 2/n * training_gradient(y,X,theta)
+        # calculating the gradient
+        gradient = gradientFunc(X,y,theta,n)
 
+        # gradient clipping
+        gradient = np.minimum(gradient, tol)
+
+        # update the parameters
         change = eta * gradient + momentum * change
         theta -= change
 
+        # calculating MSE
         y_predict = np.dot(X, theta)
         cost[i+1] = MSE(y, y_predict)
-
-    # print("theta from GD")
-    # print(theta)
 
     x_axis = np.linspace(0,iterations,iterations+1)
     plt.plot(x_axis, cost, label='None')
@@ -96,22 +99,21 @@ def gradient_descent(X, x, y, momentum=0, lmd=0):
     for _ in range(iterations):
         
         # calculate the gradient
-        # gradient = 2/n * training_gradient(y,X,theta)  # this is very slow
-        gradient = gradientFunc(X,y,theta)
-       
-        # calculate outer product of gradient
-        Giter += gradient @ gradient.T
+        gradient = gradientFunc(X,y,theta,n)
+
+        # gradient clipping
+        Giter += np.minimum(gradient @ gradient.T, tol)
+
         # algorithm with only diagonal elements
         Ginverse = np.c_[eta / (delta + np.sqrt(np.diag(Giter)))]
         
+        # update the parameters
         change = np.multiply(Ginverse,gradient) + momentum * change
         theta -= change
 
+        # calculating MSE
         y_predict = np.dot(X, theta)
         cost[i+1] = MSE(y, y_predict)
-
-    # print("theta from GD with AdaGrad")
-    # print(theta)
 
     plt.plot(x_axis, cost, label='AdaGrad')
 
@@ -124,21 +126,24 @@ def gradient_descent(X, x, y, momentum=0, lmd=0):
 
     for _ in range(iterations):
 
-        # gradient = 2/n * training_gradient(y, X, theta)
-        gradient = gradientFunc(X,y,theta)
+        # calculating the gradient
+        gradient = gradientFunc(X,y,theta,n)
         grad_squared = gradient @ gradient.T 
-        RMS += rho * RMS + (1 - rho) * grad_squared  # NOTE: we easily get overflow, should clip the gradients
+
+        # gradient clipping
+        grad_squared = np.minimum(grad_squared, tol)
+
+        RMS += rho * RMS + (1 - rho) * grad_squared 
 
         Ginverse = np.c_[eta / (delta + np.sqrt(np.diag(Giter)))]
-        change = np.multiply(Ginverse,gradient) + momentum * change
 
+        # update the parameters
+        change = np.multiply(Ginverse,gradient) + momentum * change
         theta -= change
 
+        # calculating MSE
         y_predict = np.dot(X, theta)
         cost[i+1] = MSE(y, y_predict)
-
-    # print("theta from GD with RMSprop")
-    # print(theta)
 
     plt.plot(x_axis, cost, label='RMSProp')
 
@@ -151,55 +156,40 @@ def gradient_descent(X, x, y, momentum=0, lmd=0):
 
     for i in range(iterations):
     
-        grad_theta = 2/n * training_gradient(y, X, theta)
-        grad_theta2 = grad_theta @ grad_theta.T
+        # calculating the gradient
+        gradient = gradientFunc(X,y,theta,n)
+        grad_squared = gradient @ gradient.T
 
-        ## momentum ##
-        m_dw = rho1 * m_dw + (1 - rho1) * grad_theta
+        # gradient clipping
+        grad_squared = np.minimum(grad_squared, tol)
 
-        ## rms ##
-        v_dw = rho2 * v_dw + (1 - rho2) * grad_theta2
+        # momentum
+        m_dw = rho1 * m_dw + (1 - rho1) * gradient
+
+        # RMS
+        v_dw = rho2 * v_dw + (1 - rho2) * grad_squared
 
         # bias correction
         v_dw_corr = v_dw / (1 - rho2**(i + 1))
 
-        # Taking the diagonal only and inverting
+        # taking the diagonal only and inverting
         Ginverse_w = np.c_[eta / (delta + np.sqrt(np.diagonal(v_dw_corr)))]
         
+        # update the parameters
         change = np.multiply(Ginverse_w,m_dw) + momentum * change
         theta -= change
 
+        # calculating MSE
         y_predict = np.dot(X, theta)
         cost[i+1] = MSE(y, y_predict)
 
     plt.plot(x_axis, cost, label='Adam')
-        
-    # print("theta from SGD with Adam")
-    # print(theta)
 
     plt.title('Gradient descent with adaptive learning rates')
     plt.xlabel('iterations')
     plt.ylabel('MSE')
     plt.legend()
     plt.show()
-
-    # # Autograd with AdaGrad
-    # theta = np.random.randn(len(X[0]),1) # initial guess for parameters
-    # training_gradient = elementwise_grad(CostFunc,2)
-    # delta = 1e-8  # AdaGrad parameters to avoid possible zero division
-    # Giter = np.zeros((3,3))
-    # for _ in range(iterations):
-    #     gradient = training_gradient(y,X,theta)
-    #     # calculate outer product of gradients
-    #     Giter += gradient @ gradient.T
-    #     # algorithm with only diagonal elements
-    #     Ginverse = np.c_[eta/(delta + np.sqrt(np.diag(Giter)))]
-        
-    #     change = np.multiply(Ginverse,gradient) + momentum*change
-    #     theta -= change
-
-    # print("theta from GD with AdaGrad")
-    # print(theta)
 
 
 def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
@@ -208,16 +198,15 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
 
     ## Analytical ###
     theta_linreg = np.linalg.inv(X.T @ X) @ (X.T @ y)
-    print("analytical theta")
-    print(theta_linreg)
 
     ### Numerical ###
     theta_initial = np.random.rand(len(X[0]),1)  # len(X[0]) = number of parameters
     theta = theta_initial
     eta = 0.01  # initial learning rate
+    tol = 10**4
 
     # Stochastic part
-    n_epochs = 300
+    n_epochs = 300  # number of epochs
     M = 10  # batch size
     m = int(len(x)/M)  # number of batches
 
@@ -231,32 +220,33 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
         Xbatches[i] = X[random_index:random_index+M]
         Ybatches[i] = y[random_index:random_index+M]
 
-    change = 0
-    training_gradient = elementwise_grad(CostFunc,2)  # 2 means we are differentiating with respect to theta
-
     # storing the predicted y values
     cost = [0 for i in range(n_epochs+1)]
     y_pred_initial = np.dot(X, theta)
     cost[0] = MSE(y,y_pred_initial)
 
+    change = 0
     for epoch in range(n_epochs):  # looping through epochs
         for i in range(m):  # looping through batches
 
-            gradient = 2/M * Xbatches[i].T @ ((Xbatches[i] @ theta) - Ybatches[i])
-            # gradient = 2/M * training_gradient(Ybatches[i], Xbatches[i], theta)
+            # calculate the gradient
+            gradient = gradientFunc(Xbatches[i],Ybatches[i],theta,M)
+
+            # gradient clipping
+            gradient = np.minimum(gradient, tol)
             # eta = learning_schedule(epoch * m + i)  # NOTE: seems like updating eta here makes eta too small too fast, MSE gets really bad
             
+            # update the parameters
             change = eta * gradient + momentum * change
             theta -= change
         
+        # calculating MSE
         y_predict = np.dot(X, theta)
         cost[epoch+1] = MSE(y, y_predict)
 
     x_axis = np.linspace(0, n_epochs, n_epochs+1)
     plt.plot(x_axis, cost, label='None')
 
-    # print("theta from SGD")
-    # print(theta)
 
     # AdaGrad
     theta = theta_initial
@@ -267,21 +257,21 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
         Giter = np.zeros((np.shape(X)[1],np.shape(X)[1]))
         for i in range(m):
 
-            gradient = 2/M * training_gradient(Ybatches[i], Xbatches[i], theta)
+            # calculate the gradient
+            gradient = gradientFunc(Xbatches[i],Ybatches[i],theta,M)
             
-            # gradient squared
-            Giter += gradient @ gradient.T
+            # gradient clipping
+            Giter += np.minimum(gradient @ gradient.T, tol)
 
             Ginverse = np.c_[eta / (delta + np.sqrt(np.diag(Giter)))]
-            change = np.multiply(Ginverse,gradient) + momentum * change
-            
-    #         theta -= change
 
+            # update the parameters
+            change = np.multiply(Ginverse,gradient) + momentum * change
+            theta -= change
+
+        # calculate MSE
         y_predict = np.dot(X, theta)
         cost[epoch+1] = MSE(y, y_predict)
-
-    # print("theta from SGD with AdaGrad")
-    # print(theta)
 
     plt.plot(x_axis, cost, label='AdaGrad')
 
@@ -293,22 +283,27 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
         RMS = np.zeros((np.shape(X)[1],np.shape(X)[1]))
         for i in range(m):
 
-            gradient = 2/M * training_gradient(Ybatches[i], Xbatches[i], theta)
+            # calculate the gradient
+            gradient = gradientFunc(Xbatches[i],Ybatches[i],theta,M)
             grad_squared = gradient @ gradient.T 
+
+            # gradient clipping
+            grad_squared = np.minimum(grad_squared, tol)
+
             RMS += rho * RMS + (1 - rho) * grad_squared
 
             Ginverse = np.c_[eta / (delta + np.sqrt(np.diag(Giter)))]
-            change = np.multiply(Ginverse,gradient) + momentum * change
 
+            # update the parameters
+            change = np.multiply(Ginverse,gradient) + momentum * change
             theta -= change
 
+        # calculate MSE
         y_predict = np.dot(X, theta)
         cost[epoch+1] = MSE(y, y_predict)
 
     plt.plot(x_axis, cost, label='RMSProp')
 
-    # print("theta from SGD with RMSprop")
-    # print(theta)
 
     # Adam
     theta = theta_initial
@@ -319,31 +314,34 @@ def stochastic_gradient_descent(X, x, y, momentum=0, lmd=0):
         v_dw = 0
         for i in range(m):
            
-            grad_theta = 2/M * training_gradient(Ybatches[i], Xbatches[i], theta)
-            grad_theta2 = grad_theta @ grad_theta.T
+            # calculate the gradient
+            gradient = gradientFunc(Xbatches[i],Ybatches[i],theta,M)
+            grad_squared = gradient @ gradient.T
 
-            ## momentum ##
-            m_dw = rho1 * m_dw + (1 - rho1) * grad_theta
+            # gradient clipping
+            grad_squared = np.minimum(grad_squared, tol)
 
-            ## rms ##
-            v_dw = rho2 * v_dw + (1 - rho2) * grad_theta2
+            # momentum
+            m_dw = rho1 * m_dw + (1 - rho1) * gradient
+
+            # RMS
+            v_dw = rho2 * v_dw + (1 - rho2) * grad_squared
 
             # bias correction
             v_dw_corr = v_dw / (1 - rho2**(epoch + 1))
 
-            # Taking the diagonal only and inverting
+            # taking the diagonal only and inverting
             Ginverse_w = np.c_[eta / (delta + np.sqrt(np.diagonal(v_dw_corr)))]
-           
+
+            # update the parameters
             change = np.multiply(Ginverse_w,m_dw) + momentum * change
             theta -= change
 
+        # calculate MSE
         y_predict = np.dot(X, theta)
         cost[epoch+1] = MSE(y, y_predict)
 
     plt.plot(x_axis, cost, label='Adam')
-            
-    # print("theta from SGD with Adam")
-    # print(theta)
 
     plt.title('Stochastic gradient descent with adaptive learning rates')
     plt.xlabel('epochs')
@@ -357,23 +355,23 @@ if __name__ == "__main__":
     n = 1000
 
     x = 2*np.random.rand(n,1)
-    # # y = 4+3*x+np.random.randn(n,1)
+    # y = 4+3*x+np.random.randn(n,1)
     
-    # z = 1 + 2*x + 3*x**2
-    # X = np.c_[np.ones((n,1)), x, x**2]
+    z = 1 + 2*x + 3*x**2
+    X = np.c_[np.ones((n,1)), x, x**2]
 
     # x = np.arange(0, 1, 0.05)
     # y = np.arange(0, 1, 0.05)
     # x, y = np.meshgrid(x, y) 
 
-    sigma = .1  # Standard deviation of the noise
-    lmd = .01
-    n = 6  # polynomial degree
+    # sigma = .1  # Standard deviation of the noise
+    # lmd = .01
+    # n = 6  # polynomial degree
 
-    # Franke function with stochastic noise
-    z = FrankeFunction(x, y) #+ np.random.normal(0, sigma, x.shape)
-    z = z.flatten().reshape(-1,1)
-    X = create_X(x,y,n)
+    # # Franke function with stochastic noise
+    # z = FrankeFunction(x, y) #+ np.random.normal(0, sigma, x.shape)
+    # z = z.flatten().reshape(-1,1)
+    # X = create_X(x,y,n)
 
     gradient_descent(X,x,z)
     # gradient_descent(X,x,y,momentum=0.03)

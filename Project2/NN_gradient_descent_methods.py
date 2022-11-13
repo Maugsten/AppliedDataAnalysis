@@ -1,4 +1,3 @@
-
 import numpy as np
 
 
@@ -7,9 +6,16 @@ def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momen
     Args:
   
     """
+    # toleranse for gradient clipping
+    tol1 = 10**2
+    tol2 = 10**4
 
     if optimizer == "None":
         for i in range(len(W)):
+            
+            # gradient clipping
+            dCdW[i] = np.minimum(dCdW[i], tol1)
+            dCdB[i] = np.minimum(dCdB[i], tol1)
 
             change[i] = eta * dCdW[i] + momentum * change[i]
             W[i] = W[i] - change[i]
@@ -17,12 +23,13 @@ def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momen
 
 
     if optimizer == "AdaGrad": 
-        delta = 1e-8  # AdaGrad parameter to avoid possible zero division
+        delta = 1e-8  # parameter to avoid possible zero division
         for i in range(len(W)):
         
-            # calculate outer product of gradients
-            dCdW2[i] += dCdW[i] @ dCdW[i].T
-            dCdB2[i] += dCdB[i] @ dCdB[i].T
+            # calculate outer product of gradients and perform gradient clipping
+            dCdW2[i] += np.minimum(dCdW[i] @ dCdW[i].T, tol2)
+            dCdB2[i] += np.minimum(dCdB[i] @ dCdB[i].T, tol2)
+
             # algorithm with only diagonal elements
             Ginverse_W = np.c_[eta / (np.sqrt(dCdW2[i]) + delta)]
             Ginverse_B = np.c_[eta / (np.sqrt(dCdB2[i]) + delta)]
@@ -38,8 +45,13 @@ def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momen
         rho = 0.9  # moving average parameter, 0.9 is ususally recommended
         for i in range(len(W)):
 
+            # calculate outer product of gradients
             dCdW2_ = dCdW[i] @ dCdW[i].T 
             dCdB2_ = dCdB[i] @ dCdB[i].T
+
+            # gradient clipping
+            dCdW2_ = np.minimum(dCdW2_, tol2)
+            dCdB2_ = np.minimum(dCdB2_, tol2)
             
             RMS_W[i] = rho * RMS_W[i] + (1 - rho) * dCdW2_  
             RMS_B[i] = rho * RMS_B[i] + (1 - rho) * dCdB2_
@@ -61,6 +73,10 @@ def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momen
             dCdW2_ = dCdW[i] @ dCdW[i].T  
             dCdB2_ = dCdB[i] @ dCdB[i].T
             
+            # gradient clipping
+            dCdW2_ = np.minimum(dCdW2_, tol2)
+            dCdB2_ = np.minimum(dCdB2_, tol2)
+
             # RMS
             RMS_W[i] = rho2 * RMS_W[i] + (1 - rho2) * dCdW2_  
             RMS_B[i] = rho2 * RMS_B[i] + (1 - rho2) * dCdB2_
@@ -83,23 +99,3 @@ def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momen
             B[i] = B[i] - np.multiply(Ginverse_B[0,0], M_B_corr)
 
     return W, B
-    
-
-if __name__ == "__main__":
-
-    ### check gradient descent ###
-    n = 1000
-
-    x = 2*np.random.rand(n,1)
-    # y = 4+3*x+np.random.randn(n,1)
-    
-    y = 1 + 2*x + 3*x**2
-    X = np.c_[np.ones((n,1)), x, x**2]
-
-    # gradient_descent(X,x,y)
-    # gradient_descent(X,x,y,momentum=0.03)
-    # gradient_descent(X,x,y,momentum=0.03,lmd=1e-3)
-    stochastic_gradient_descent(X,x,y)
-    # stochastic_gradient_descent(X,x,y,momentum=0.03)
-    # stochastic_gradient_descent(X,x,y,momentum=0.03,lmd=1e-3)
-
