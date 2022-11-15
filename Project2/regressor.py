@@ -386,7 +386,7 @@ if __name__=="__main__":
     print("Score to beat:  ", 0.00768127)
 
     # Sets seed so results can be reproduced.
-    # np.random.seed(2001)  
+    np.random.seed(10)  
 
     # Defines domain. No need to scale this data as it's already in the range (0,1)
     x = np.arange(0, 1, 0.05)
@@ -545,30 +545,26 @@ if __name__=="__main__":
     # print("Neural Network: ", mse/reps)
 
     """ Adaptive Learning """
-    # print('No Adaptive Learning...')
-    # nodes = np.array([5, 5, 5])
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
-    # NN.train(X_train, z_train, X_test, z_test, method='GD')
-    # costTrainNoLearning = NN.C
-    # costTestNoLearning = NN.testC
+    nodes = np.array([5, 6, 4, 8])
+    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    NN.train(X_train, z_train, X_test, z_test, method='SGD')
+    costTrainNoLearning = NN.C
+    costTestNoLearning = NN.testC
 
-    # print('Adagrad...')
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
-    # NN.train(X_train, z_train, X_test, z_test, method='GD', optimizer="AdaGrad")
-    # costTrainAdagrad = NN.C
-    # costTestAdagrad = NN.testC
+    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="AdaGrad")
+    costTrainAdagrad = NN.C
+    costTestAdagrad = NN.testC
 
-    # print('RMSprop...')
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
-    # NN.train(X_train, z_train, X_test, z_test, method='GD', optimizer="RMSprop")
-    # costTrainRMSprop = NN.C
-    # costTestRMSprop = NN.testC
+    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="RMSprop")
+    costTrainRMSprop = NN.C
+    costTestRMSprop = NN.testC
 
-    # print('Adam...')
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
-    # NN.train(X_train, z_train, X_test, z_test, method='GD', optimizer="Adam")
-    # costTrainAdam = NN.C
-    # costTestAdam = NN.testC
+    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="Adam")
+    costTrainAdam = NN.C
+    costTestAdam = NN.testC
 
     # # Plotting results
     # plt.figure(figsize=(6,4))
