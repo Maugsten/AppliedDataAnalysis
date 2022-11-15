@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from NN_gradient_descent_methods import *
-from functions import *
+from project1_functions import *
 import time
 
 
@@ -380,11 +380,13 @@ class Neural_Network(object):
 
 
 if __name__=="__main__":
+    """ ========================= Regression ========================= """
+
     """ In this section, we set up the data we want to analyse. This includes computing, reshaping and scaling the data. """
     print("Score to beat:  ", 0.00768127)
 
     # Sets seed so results can be reproduced.
-    # np.random.seed(1998)  
+    # np.random.seed(2001)  
 
     # Defines domain. No need to scale this data as it's already in the range (0,1)
     x = np.arange(0, 1, 0.05)
@@ -543,55 +545,63 @@ if __name__=="__main__":
     # print("Neural Network: ", mse/reps)
 
     """ Adaptive Learning """
-    nodes = np.array([5, 5, 5, 5])
-    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
-    NN.train(X_train, z_train, X_test, z_test, method='SGD')
-    costTrainNoLearning = NN.C
-    costTestNoLearning = NN.testC
+    # print('No Adaptive Learning...')
+    # nodes = np.array([5, 5, 5])
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='GD')
+    # costTrainNoLearning = NN.C
+    # costTestNoLearning = NN.testC
 
-    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
-    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="Adagrad")
-    costTrainAdagrad = NN.C
-    costTestAdagrad = NN.testC
+    # print('Adagrad...')
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='GD', optimizer="AdaGrad")
+    # costTrainAdagrad = NN.C
+    # costTestAdagrad = NN.testC
 
-    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
-    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="RMSprop")
-    costTrainRMSprop = NN.C
-    costTestRMSprop = NN.testC
+    # print('RMSprop...')
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='GD', optimizer="RMSprop")
+    # costTrainRMSprop = NN.C
+    # costTestRMSprop = NN.testC
 
-    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
-    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="Adam")
-    costTrainAdam = NN.C
-    costTestAdam = NN.testC
+    # print('Adam...')
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='GD', optimizer="Adam")
+    # costTrainAdam = NN.C
+    # costTestAdam = NN.testC
 
-    # Plotting results
-    plt.figure(figsize=(6,4))
-    plt.plot(costTrainNoLearning, label='No Adaptive Learning')
-    plt.plot(costTrainAdagrad, label='Adagrad')
-    plt.plot(costTrainRMSprop, label='RMSprop')
-    plt.plot(costTrainAdagrad, label='Adam')
-    plt.grid()
-    plt.title('Training Data Cost')
-    plt.xlabel('Iterations')
-    plt.ylabel('Cost')
-    plt.legend()
+    # # Plotting results
+    # plt.figure(figsize=(6,4))
+    # plt.plot(costTrainNoLearning, label='No Adaptive Learning')
+    # plt.plot(costTrainAdagrad, label='Adagrad')
+    # plt.plot(costTrainRMSprop, label='RMSprop')
+    # plt.plot(costTrainAdam, label='Adam')
+    # plt.grid()
+    # plt.title('Training Data Cost')
+    # plt.xlabel('Iterations')
+    # plt.ylabel('Cost')
+    # plt.legend()
 
-    plt.figure(figsize=(6,4))
-    plt.plot(costTestNoLearning, label='No Adaptive Learning')
-    plt.plot(costTestAdagrad, label='Adagrad')
-    plt.plot(costTestRMSprop, label='RMSprop')
-    plt.plot(costTestAdam, label='Adam')
-    plt.grid()
-    plt.title('Test Data Cost')
-    plt.xlabel('Iterations')
-    plt.ylabel('Cost')
-    plt.legend()
-    plt.show()
+    # plt.figure(figsize=(6,4))
+    # plt.plot(costTestNoLearning, label='No Adaptive Learning')
+    # plt.plot(costTestAdagrad, label='Adagrad')
+    # plt.plot(costTestRMSprop, label='RMSprop')
+    # plt.plot(costTestAdam, label='Adam')
+    # plt.grid()
+    # plt.title('Test Data Cost')
+    # plt.xlabel('Iterations')
+    # plt.ylabel('Cost')
+    # plt.legend()
+    # plt.show()
 
     """ In this section, we post-process our findings. """
-    # MSE
-    mse = NN.MSE(z_test)
-    print("Neural Network: ", mse)
+    # nodes = np.array([70, 70, 70, 70, 70, 70])
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD')#, method='SGD', optimizer='Adam')
+    
+    # # MSE
+    # mse = NN.MSE(z_test)
+    # print("Neural Network: ", mse)
 
     
     # zHat = NN.forward(X).reshape((m,n))
@@ -643,7 +653,108 @@ if __name__=="__main__":
 
 
 
-    """ OLD CODE
+    """ ========================= Classification ========================= """
+    """ Setting up data """
+    # M = Malignant = BAD
+    # B = Benign = NOT BAD   
+    num_lines = sum(1 for line in open('archive\data.csv', 'r'))
+    file = open('archive\data.csv', 'r')
+    features = np.array(file.readline().split(','))[:-1]
+    data = []
+    for i in range(num_lines-1):
+        data.append(np.array(file.readline().split(',')))
+    data = np.array(data)
+    X = data[:,2:]
+    X = X.astype(np.float64)
+    y = data[:,1]
+    for i in range(len(y)):
+        if y[i]=='M':
+            y[i]=1
+        elif y[i]=='B':
+            y[i]=0
+        else:
+            print('Unrecognised data')
+    y = y.astype(np.float64).reshape(1,-1).T
+    
+    # Scaling the features (normalization)
+    for i in range(len(X[0,:])):
+        X[:,i] = (X[:,i]-np.amin(X[:,i])) / (np.amax(X[:,i]) - np.amin(X[:,i]))
+
+    # Note to self: shape of X = (569, 30)
+
+    # Splitting into train and test data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+    """ test net """
+    # Training the network
+    nodes = np.array([15,15,15])
+    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    NN.train(X_train, y_train, X_test, y_test, method='GD', optimizer='Adam')#, method='SGD', optimizer='Adam')
+
+    prediction = NN.forward(X_test)
+    for i in range(len(prediction)):
+        if prediction[i]>=0.5:
+            prediction[i]=1
+        elif prediction[i]<0.5:
+            prediction[i]=0
+        else:
+            print('Unrecognised data')
+
+    errors = abs(y_test-prediction)
+    accuracy = 1 - np.sum(errors)/len(errors)
+    print('Accuracy: {}'.format(accuracy))
+
+    # Plotting results
+    plt.figure(figsize=(6,4))
+    plt.plot(NN.C)
+    plt.plot(NN.testC)
+    plt.grid()
+    plt.title('Training our neural network')
+    plt.xlabel('Iterations')
+    plt.ylabel('Cost')
+    plt.show()
+
+    """ Layers and nodes """
+    # nLayers = 6
+    # nNodes = [5, 10, 15, 20, 25, 30]
+    # acc = np.zeros((nLayers, len(nNodes)))
+
+    # for i in range(nLayers):
+    #     for j in range(len(nNodes)):
+    #         nodes = np.array([nNodes[j] for e in range(i+1)])
+    #         print(nodes)
+    #         NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=10)
+    #         NN.train(X_train, y_train, X_test, y_test, method='SGD')
+    #         prediction = NN.forward(X_test)
+    #         for k in range(len(prediction)):
+    #             if prediction[k]>=0.5:
+    #                 prediction[k]=1
+    #             elif prediction[k]<0.5:
+    #                 prediction[k]=0
+    #             else:
+    #                 print('Unrecognised data')
+
+    #         errors = abs(y_test-prediction)
+    #         accuracy = 1 - np.sum(errors)/len(errors)
+    #         acc[i,j] = accuracy
+
+    # fig, ax = plt.subplots(figsize=(6,4))
+    # im = ax.imshow(acc, cmap="PuBu")
+
+    # cbar = ax.figure.colorbar(im, ax=ax)
+    # cbar.ax.set_ylabel("", rotation=-90, va="bottom")
+    
+    # layers = [i+1 for i in range(nLayers)]
+    # ax.set_xticks(np.arange(len(layers)), labels=layers)
+    # ax.set_yticks(np.arange(len(nNodes)), labels=nNodes)
+    # ax.set_title("Accuracy of Neural Network Prediction")
+    # ax.set_xlabel("Number of Hidden Layers")
+    # ax.set_ylabel("Number of Nodes in Layers")
+    # fig.tight_layout()
+    # plt.show()
+
+
+    """  ======================= OLD CODE =======================
     np.random.seed(10)
     
     # Setting the data
