@@ -750,8 +750,8 @@ def lasso(x, y, z, lmd, polydeg=5, startdeg=1, resampling='None', k=10):
 
 if __name__=="__main__":
     mse_no = np.zeros(7)
-    mse_bs = np.zeros(10)
-    mse_cv = np.zeros(10)
+    mse_bs = np.zeros(7)
+    mse_cv = np.zeros(7)
 
     # np.random.seed(1998)  # Sets seed so results can be reproduced.
 
@@ -768,12 +768,12 @@ if __name__=="__main__":
     # OLS regression
 
 
-    n = 1000
+    n = 10
     for i in range(n):
         z = FrankeFunction(x, y) + np.random.normal(0, sigma, x.shape)
         mse_no += ordinary_least_squares(x, y, z, polydeg=10, startdeg=4, resampling='None')            # No resampling
-        # mse_bs += ordinary_least_squares(x, y, z, polydeg=10, startdeg=6, resampling='Bootstrap')       # Bootstrapping
-        # mse_cv += ordinary_least_squares(x, y, z, polydeg=10, startdeg=6, resampling='CrossValidation') # 10-fold Cross-Validation
+        mse_bs += ordinary_least_squares(x, y, z, polydeg=10, startdeg=4, resampling='Bootstrap')       # Bootstrapping
+        mse_cv += ordinary_least_squares(x, y, z, polydeg=10, startdeg=4, resampling='CrossValidation') # 10-fold Cross-Validation
 
     mse_no /= n
     mse_bs /= n
