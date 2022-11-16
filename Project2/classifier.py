@@ -174,6 +174,14 @@ if __name__=="__main__":
     NN.train(X_train, y_train, X_test, y_test, method='GD')
 
     prediction = NN.forward(X)
+    for i in range(len(prediction)):
+        if prediction[i]>=0.5:
+            prediction[i]=1
+        elif prediction[i]<0.5:
+            prediction[i]=0
+        else:
+            print('Unrecognised data')
+
     errors = abs(y-prediction)
     accuracy = 1 - np.sum(errors)/len(errors)
     print('Accuracy: {}'.format(accuracy))

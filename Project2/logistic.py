@@ -1,3 +1,4 @@
+from cProfile import label
 import numpy as np 
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split  
@@ -63,17 +64,32 @@ if __name__=="__main__":
     # X,y = make_classification()
     X_tr,X_te,y_tr,y_te = train_test_split(X,y,test_size=0.1)
 
-    ModelMaker = Classifier(eta=0.01)
-    ModelMaker.optimize(X_tr, y_tr)
+    etas = np.logspace(-.5, -4, 1000)
+    accuracyTrain = np.zeros_like(etas)
+    accuracyTest = np.zeros_like(etas)
+    for i in range(len(etas)):
+        ModelMaker = Classifier(eta=etas[i])
+        ModelMaker.optimize(X_tr, y_tr)
 
-    pred_tr = ModelMaker.predict(X_tr)
-    pred_te = ModelMaker.predict(X_te)
+        pred_tr = ModelMaker.predict(X_tr)
+        pred_te = ModelMaker.predict(X_te)
 
-    errors = abs(y_tr - pred_tr)
-    accuracy = 1 - np.sum(errors)/len(errors)
-    print('Train Accuracy: {}'.format(accuracy))
+        errors = abs(y_tr - pred_tr)
+        accuracy = 1 - np.sum(errors)/len(errors)
+        # print('Train Accuracy: {}'.format(accuracy))
+        accuracyTrain[i] = accuracy
 
-    errors = abs(y_te - pred_te)
-    accuracy = 1 - np.sum(errors)/len(errors)
-    print('Test Accuracy: {}'.format(accuracy))
+        errors = abs(y_te - pred_te)
+        accuracy = 1 - np.sum(errors)/len(errors)
+        # print('Test Accuracy: {}'.format(accuracy))
+        accuracyTest[i] = accuracy
 
+    plt.figure(figsize=(6,4))
+    plt.semilogx(etas, accuracyTrain, label="Train Data")
+    plt.semilogx(etas, accuracyTest, label="Test Data")
+    plt.grid()
+    plt.title('Accuracy: Logistic Regression')
+    plt.xlabel('Learning Rate')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.show()
