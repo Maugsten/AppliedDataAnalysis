@@ -386,7 +386,7 @@ if __name__=="__main__":
     print("Score to beat:  ", 0.00768127)
 
     # Sets seed so results can be reproduced.
-    np.random.seed(10)  
+    # np.random.seed(1)  
 
     # Defines domain. No need to scale this data as it's already in the range (0,1)
     x = np.arange(0, 1, 0.05)
@@ -450,9 +450,9 @@ if __name__=="__main__":
 
     
 
-    # """ In this section, we vary the number of hidden layers and nodes. """
-    # nLayers = 5
-    # nNodes = [10, 20, 30, 40, 50]
+    """ In this section, we vary the number of hidden layers and nodes. """
+    # nLayers = 3
+    # nNodes = [5, 10, 15, 20, 25, 30]
     # MSE = np.zeros((nLayers, len(nNodes)))
 
     # for i in range(nLayers):
@@ -472,38 +472,99 @@ if __name__=="__main__":
     # cbar.ax.set_ylabel("", rotation=-90, va="bottom")
     
     # layers = [i+1 for i in range(nLayers)]
-    # ax.set_xticks(np.arange(len(layers)), labels=layers)
-    # ax.set_yticks(np.arange(len(nNodes)), labels=nNodes)
+    # ax.set_yticks(np.arange(len(layers)), labels=layers)
+    # ax.set_xticks(np.arange(len(nNodes)), labels=nNodes)
+    # for i in range(len(layers)):
+    #     for j in range(len(nNodes)):
+    #         text = ax.text(j, i, int(1e4*MSE[i, j])/1e4,
+    #                     ha="center", va="center")
     # ax.set_title("MSE of Neural Network Prediction")
-    # ax.set_xlabel("Number of Hidden Layers")
-    # ax.set_ylabel("Number of Nodes in Layers")
+    # ax.set_ylabel("Number of Hidden Layers")
+    # ax.set_xlabel("Number of Nodes in Layers")
     # fig.tight_layout()
     # plt.show()
 
     """ In this section, we vary a fixed learning rate """
-    # nodes = [50, 50, 50]
-    # etas = np.logspace(0, -5, 12)
+    # nodes = [15]
+    # etas = np.logspace(-.1, -5, 30)
     # MSE = np.zeros(len(etas))
     # for i in range(len(etas)):
     #     print(etas[i])
-    #     NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=etas[i], lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=10)
-    #     NN.train(X_train, z_train, X_test, z_test, method='SGD')
+    #     NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=etas[i], lmd=0, momentum=0, maxIterations=500)#, epochs=3, batchSize=10)
+    #     NN.train(X_train, z_train, X_test, z_test, method='GD', optimizer='Adam')
     #     MSE[i] = NN.MSE(z_test)
 
     # plt.figure(figsize=(6,4))
-    # plt.plot(np.log10(etas), np.log10(MSE), 'r', linewidth=1.5)
+    # plt.plot(etas, MSE, 'r', linewidth=1.5)
+    # plt.xscale('log')
+    # # plt.yscale('log')
     # plt.title('MSE of Neural Network Prediction')
     # plt.xlabel('Learning Rate')
     # plt.ylabel('MSE')
+    # plt.grid()
     # plt.show()
 
     """ In this section, we vary momentum """
-    # nodes = [50, 50, 50]
-    # momentums = np.logspace(1, -10, 20)
+    # nodes = [20]
+    # # momentums = np.logspace(-.5, -3, 4)
+    # momentums = [1, 0.5, 0.1, 0.01]
+    
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=momentums[0], maxIterations=500, epochs=100, batchSize=10)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD')
+    # C1 = NN.C
+
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=momentums[1], maxIterations=500, epochs=100, batchSize=10)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD')
+    # C2 = NN.C
+
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=momentums[2], maxIterations=500, epochs=100, batchSize=10)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD')
+    # C3 = NN.C
+
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=momentums[3], maxIterations=500, epochs=100, batchSize=10)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD')
+    # C4 = NN.C
+
+    # dC1di = []
+    # dC2di = []
+    # dC3di = []
+    # dC4di = []
+    # for i in range(len(C1)-1):
+    #     dC1di.append(abs(C1[i+1]-C1[i]))
+    #     dC2di.append(abs(C2[i+1]-C2[i]))
+    #     dC3di.append(abs(C3[i+1]-C3[i]))
+    #     dC4di.append(abs(C4[i+1]-C4[i]))
+
+    # dC1di = np.array(dC1di).flatten()
+    # dC2di = np.array(dC2di).flatten()
+    # dC3di = np.array(dC3di).flatten()
+    # dC4di = np.array(dC4di).flatten()
+
+    # kernel_size = 10
+    # kernel = np.ones(kernel_size) / kernel_size
+
+    # dC1di = np.convolve(dC1di[:100], kernel, mode='same')
+    # dC2di = np.convolve(dC2di[:100], kernel, mode='same')
+    # dC3di = np.convolve(dC3di[:100], kernel, mode='same')
+    # dC4di = np.convolve(dC4di[:100], kernel, mode='same')
+    
+    # plt.figure(figsize=(6,4))
+    # plt.plot(dC1di, label='Momentum=1')
+    # plt.plot(dC2di, label='Momentum=0.5')
+    # plt.plot(dC3di, label='Momentum=0.1')
+    # plt.plot(dC4di, label='Momentum=0.01')
+    # plt.grid()
+    # # plt.yscale('log')
+    # plt.title('Change in Cost Function per Iteration')
+    # plt.xlabel('Iterations')
+    # plt.ylabel(r'$\Delta C$')
+    # plt.legend()
+    # plt.show()
+
     # MSE = np.zeros(len(momentums))
     # MSEref = np.zeros_like(MSE)
     # for i in range(len(momentums)):
-    #     print(momentums[i])
+    #     print('\n', momentums[i])
     #     NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=momentums[i], maxIterations=500, epochs=100, batchSize=10)
     #     NN.train(X_train, z_train, X_test, z_test, method='SGD')
     #     MSE[i] = NN.MSE(z_test)
@@ -516,15 +577,18 @@ if __name__=="__main__":
     #     print(MSEref[i])
 
     # plt.figure(figsize=(6,4))
-    # plt.loglog(momentums, MSE, 'r', linewidth=1.5)
-    # plt.loglog(momentums, MSEref, 'k--', linewidth=1.5)
+    # plt.plot(momentums, MSE, 'r', linewidth=1.5, label='With Momentum')
+    # plt.plot(momentums, MSEref, 'k--', linewidth=1.5, label='Without Momentum')
+    # plt.xscale('log')
     # plt.title('MSE of Neural Network Prediction')
     # plt.xlabel('Momentum')
     # plt.ylabel('MSE')
+    # plt.legend()
+    # plt.grid()
     # plt.show()
 
     # std = np.std(np.real(MSEref))
-    # print("Variance without momentum: ", std) 
+    # print("\nVariance without momentum: ", std) 
 
     """ Activation functions """
 
@@ -545,26 +609,26 @@ if __name__=="__main__":
     # print("Neural Network: ", mse/reps)
 
     """ Adaptive Learning """
-    nodes = np.array([5, 6, 4, 8])
-    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    NN.train(X_train, z_train, X_test, z_test, method='SGD')
-    costTrainNoLearning = NN.C
-    costTestNoLearning = NN.testC
+    # nodes = np.array([25, 25])
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD')
+    # costTrainNoLearning = NN.C
+    # costTestNoLearning = NN.testC
 
-    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="AdaGrad")
-    costTrainAdagrad = NN.C
-    costTestAdagrad = NN.testC
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="AdaGrad")
+    # costTrainAdagrad = NN.C
+    # costTestAdagrad = NN.testC
 
-    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="RMSprop")
-    costTrainRMSprop = NN.C
-    costTestRMSprop = NN.testC
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="RMSprop")
+    # costTrainRMSprop = NN.C
+    # costTestRMSprop = NN.testC
 
-    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="Adam")
-    costTrainAdam = NN.C
-    costTestAdam = NN.testC
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="Adam")
+    # costTrainAdam = NN.C
+    # costTestAdam = NN.testC
 
     # # Plotting results
     # plt.figure(figsize=(6,4))
@@ -591,54 +655,54 @@ if __name__=="__main__":
     # plt.show()
 
     """ In this section, we post-process our findings. """
-    # nodes = np.array([70, 70, 70, 70, 70, 70])
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    # NN.train(X_train, z_train, X_test, z_test, method='SGD')#, method='SGD', optimizer='Adam')
+    nodes = np.array([25, 25])
+    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    NN.train(X_train, z_train, X_test, z_test, method='SGD')#, method='SGD', optimizer='Adam')
     
-    # # MSE
-    # mse = NN.MSE(z_test)
-    # print("Neural Network: ", mse)
+    # MSE
+    mse = NN.MSE(z_test)
+    print("Neural Network: ", mse)
 
     
-    # zHat = NN.forward(X).reshape((m,n))
-    # fig = plt.figure(figsize=plt.figaspect(0.5), constrained_layout=True)
-    # ax1 = fig.add_subplot(1, 2, 1, projection='3d')
-    # ax2 = fig.add_subplot(1, 2, 2, projection='3d')
+    zHat = NN.forward(X).reshape((m,n))
+    fig = plt.figure(figsize=plt.figaspect(0.5), constrained_layout=True)
+    ax1 = fig.add_subplot(1, 2, 1, projection='3d')
+    ax2 = fig.add_subplot(1, 2, 2, projection='3d')
 
-    # surf1 = ax1.plot_surface(x, y, z, cmap=cm.coolwarm,
-    #                         linewidth=0, antialiased=False)
-    # surf2 = ax2.plot_surface(x, y, zHat, cmap=cm.coolwarm,
-    #                         linewidth=0, antialiased=False)
+    surf1 = ax1.plot_surface(x, y, z, cmap=cm.coolwarm,
+                            linewidth=0, antialiased=False)
+    surf2 = ax2.plot_surface(x, y, zHat, cmap=cm.coolwarm,
+                            linewidth=0, antialiased=False)
 
-    # ax1.set_zlim(np.amin(z), np.amax(z))
-    # ax1.zaxis.set_major_locator(LinearLocator(10))
-    # ax1.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-    # ax1.set_xlabel('x')
-    # ax1.set_ylabel('y')
-    # ax1.yaxis._axinfo['label']
-    # ax1.set_zlabel('z')
-    # ax1.set_title("Original Data")
+    ax1.set_zlim(np.amin(z), np.amax(z))
+    ax1.zaxis.set_major_locator(LinearLocator(10))
+    ax1.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+    ax1.set_xlabel('x')
+    ax1.set_ylabel('y')
+    ax1.yaxis._axinfo['label']
+    ax1.set_zlabel('z')
+    ax1.set_title("Original Data")
 
-    # ax2.set_zlim(np.amin(z), np.amax(z))
-    # ax2.zaxis.set_major_locator(LinearLocator(10))
-    # ax2.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-    # ax2.set_xlabel('x')
-    # ax2.set_ylabel('y')
-    # ax2.yaxis._axinfo['label']
-    # ax2.set_zlabel('z')
-    # ax2.set_title("Neural Network Fit")
-    # fig.colorbar(surf1, shrink=0.5, aspect=10)
+    ax2.set_zlim(np.amin(z), np.amax(z))
+    ax2.zaxis.set_major_locator(LinearLocator(10))
+    ax2.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+    ax2.set_xlabel('x')
+    ax2.set_ylabel('y')
+    ax2.yaxis._axinfo['label']
+    ax2.set_zlabel('z')
+    ax2.set_title("Neural Network Fit")
+    fig.colorbar(surf1, shrink=0.5, aspect=10)
 
-    # # Plotting results
-    # plt.figure(figsize=(6,4))
-    # plt.plot(NN.C, label='Train Data')
-    # plt.plot(NN.testC, label='Test Data')
-    # plt.grid()
-    # plt.title('Training our neural network')
-    # plt.xlabel('Iterations')
-    # plt.ylabel('Cost')
-    # plt.legend()
-    # plt.show()
+    # Plotting results
+    plt.figure(figsize=(6,4))
+    plt.plot(NN.C, label='Train Data')
+    plt.plot(NN.testC, label='Test Data')
+    plt.grid()
+    plt.title('Training our neural network')
+    plt.xlabel('Iterations')
+    plt.ylabel('Cost')
+    plt.legend()
+    plt.show()
 
 
 
@@ -682,36 +746,36 @@ if __name__=="__main__":
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
     """ test net """
-    # Training the network
-    nodes = np.array([15,15,15])
-    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    NN.train(X_train, y_train, X_test, y_test, method='GD', optimizer='Adam')#, method='SGD', optimizer='Adam')
+    # # Training the network
+    # nodes = np.array([15,15,15])
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    # NN.train(X_train, y_train, X_test, y_test, method='GD', optimizer='Adam')#, method='SGD', optimizer='Adam')
 
-    prediction = NN.forward(X_test)
-    for i in range(len(prediction)):
-        if prediction[i]>=0.5:
-            prediction[i]=1
-        elif prediction[i]<0.5:
-            prediction[i]=0
-        else:
-            print('Unrecognised data')
+    # prediction = NN.forward(X_test)
+    # for i in range(len(prediction)):
+    #     if prediction[i]>=0.5:
+    #         prediction[i]=1
+    #     elif prediction[i]<0.5:
+    #         prediction[i]=0
+    #     else:
+    #         print('Unrecognised data')
 
-    errors = abs(y_test-prediction)
-    accuracy = 1 - np.sum(errors)/len(errors)
-    print('Accuracy: {}'.format(accuracy))
+    # errors = abs(y_test-prediction)
+    # accuracy = 1 - np.sum(errors)/len(errors)
+    # print('Accuracy: {}'.format(accuracy))
 
-    # Plotting results
-    plt.figure(figsize=(6,4))
-    plt.plot(NN.C)
-    plt.plot(NN.testC)
-    plt.grid()
-    plt.title('Training our neural network')
-    plt.xlabel('Iterations')
-    plt.ylabel('Cost')
-    plt.show()
+    # # Plotting results
+    # plt.figure(figsize=(6,4))
+    # plt.plot(NN.C)
+    # plt.plot(NN.testC)
+    # plt.grid()
+    # plt.title('Training our neural network')
+    # plt.xlabel('Iterations')
+    # plt.ylabel('Cost')
+    # plt.show()
 
     """ Layers and nodes """
-    # nLayers = 6
+    # nLayers = 3
     # nNodes = [5, 10, 15, 20, 25, 30]
     # acc = np.zeros((nLayers, len(nNodes)))
 
@@ -734,18 +798,22 @@ if __name__=="__main__":
     #         accuracy = 1 - np.sum(errors)/len(errors)
     #         acc[i,j] = accuracy
 
-    # fig, ax = plt.subplots(figsize=(6,4))
+    # fig, ax = plt.subplots()
     # im = ax.imshow(acc, cmap="PuBu")
 
     # cbar = ax.figure.colorbar(im, ax=ax)
     # cbar.ax.set_ylabel("", rotation=-90, va="bottom")
     
     # layers = [i+1 for i in range(nLayers)]
-    # ax.set_xticks(np.arange(len(layers)), labels=layers)
-    # ax.set_yticks(np.arange(len(nNodes)), labels=nNodes)
+    # ax.set_yticks(np.arange(len(layers)), labels=layers)
+    # ax.set_xticks(np.arange(len(nNodes)), labels=nNodes)
+    # for i in range(len(layers)):
+    #     for j in range(len(nNodes)):
+    #         text = ax.text(j, i, np.floor(1e3*acc[i, j])/1e3,
+    #                     ha="center", va="center")
     # ax.set_title("Accuracy of Neural Network Prediction")
-    # ax.set_xlabel("Number of Hidden Layers")
-    # ax.set_ylabel("Number of Nodes in Layers")
+    # ax.set_ylabel("Number of Hidden Layers")
+    # ax.set_xlabel("Number of Nodes in Layers")
     # fig.tight_layout()
     # plt.show()
 
