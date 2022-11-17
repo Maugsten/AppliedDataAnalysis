@@ -751,8 +751,8 @@ def lasso(x, y, z, lmd, polydeg=5, startdeg=1, resampling='None', k=10):
 
 if __name__=="__main__":
     mse_no = np.zeros(7)
-    mse_bs = np.zeros(10)
-    mse_cv = np.zeros(10)
+    mse_bs = np.zeros(7)
+    mse_cv = np.zeros(7)
 
     # np.random.seed(1998)  # Sets seed so results can be reproduced.
 

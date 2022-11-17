@@ -92,12 +92,12 @@ class Neural_Network(object):
             # first layer
             if i == 0:
                 self.z[0] = np.dot(X, self.W[0]) + self.B[0]  # NB! numpy turns the vector B into a matrix of the correct shape so that it can be added to the other matrix
-                self.a[0] = self.sigmoid(self.z[0])
+                self.a[0] = self.leakyReLU(self.z[0])
 
             # hidden layers
             elif 0 < i < self.numberOfHiddenLayers:
                 self.z[i] = np.dot(self.a[i-1], self.W[i]) + self.B[i]
-                self.a[i] = self.sigmoid(self.z[i])  
+                self.a[i] = self.leakyReLU(self.z[i])  
 
             # output layer
             elif i == self.numberOfHiddenLayers:
@@ -206,16 +206,17 @@ class Neural_Network(object):
         dCdW = [0 for i in range(self.numberOfHiddenLayers+1)]  # list of derivatives of the cost function in terms of weights
         dCdB = [0 for i in range(self.numberOfHiddenLayers+1)]  # list of derivatives of the cost function in terms of biases
 
-        delta[-1] = np.multiply(-(y-self.a[-1]), self.sigmoidPrime(self.z[-1]))
+        # delta[-1] = np.multiply(-(y-self.a[-1]), self.sigmoidPrime(self.z[-1]))
+        delta[-1] = self.a[-1] - y
         dCdW[-1] = np.dot(self.a[-2].T, delta[-1])    
         dCdB[-1] = np.sum(delta[-1], axis=0)
 
         for i in range(self.numberOfHiddenLayers-1, 0, -1):
-            delta[i] = np.dot(delta[i+1], self.W[i+1].T)*self.sigmoidPrime(self.z[i])
+            delta[i] = np.dot(delta[i+1], self.W[i+1].T)*self.leakyReLUPrime(self.z[i])
             dCdW[i] = np.dot(self.a[i-1].T, delta[i])    
             dCdB[i] = np.sum(delta[i], axis=0) 
 
-        delta[0] = np.dot(delta[1], self.W[1].T)*self.sigmoidPrime(self.z[0])
+        delta[0] = np.dot(delta[1], self.W[1].T)*self.leakyReLUPrime(self.z[0])
         dCdW[0] = np.dot(X.T, delta[0])    
         dCdB[0] = np.sum(delta[0], axis=0) 
 
@@ -397,7 +398,7 @@ if __name__=="__main__":
     sigma = .1  
 
     # Franke function with stochastic noise
-    z = FrankeFunction(x, y) + np.random.normal(0, sigma, x.shape)
+    z = FrankeFunction(x, y) #+ np.random.normal(0, sigma, x.shape)
     m, n = np.shape(z)
     z_ = z.reshape(-1,1)
 
@@ -432,7 +433,7 @@ if __name__=="__main__":
     # print(np.shape(y))
     # # Splitting into train and test data
     # X_train, X_test, z_train, z_test = train_test_split(x, y, test_size=0.2)
-
+    
     # Scaling
     for j in range(len(X_test[0,:])):
         X_test[:,j] = (X_test[:,j] - np.amin(X_train[:,j])) / (np.amax(X_train[:,j]) - np.amin(X_train[:,j]))   # Normalization
@@ -609,26 +610,38 @@ if __name__=="__main__":
     # print("Neural Network: ", mse/reps)
 
     """ Adaptive Learning """
-    # nodes = np.array([25, 25])
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    # NN.train(X_train, z_train, X_test, z_test, method='SGD')
-    # costTrainNoLearning = NN.C
-    # costTestNoLearning = NN.testC
+    nodes = np.array([6])
+    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0.0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    NN.train(X_train, z_train, X_test, z_test, method='SGD')
+    costTrainNoLearning = NN.C
+    costTestNoLearning = NN.testC
 
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    # NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="AdaGrad")
-    # costTrainAdagrad = NN.C
-    # costTestAdagrad = NN.testC
+    # MSE
+    mse = NN.MSE(z_test)
+    print("Neural Network, SGD None: ", mse)
 
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    # NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="RMSprop")
-    # costTrainRMSprop = NN.C
-    # costTestRMSprop = NN.testC
+    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0.0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="AdaGrad")
+    costTrainAdagrad = NN.C
+    costTestAdagrad = NN.testC
 
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    # NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="Adam")
-    # costTrainAdam = NN.C
-    # costTestAdam = NN.testC
+    # MSE
+    mse = NN.MSE(z_test)
+    print("Neural Network, SGD AdaGrad: ", mse)
+
+    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0.0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="RMSprop")
+    costTrainRMSprop = NN.C
+    costTestRMSprop = NN.testC
+
+    # MSE
+    mse = NN.MSE(z_test)
+    print("Neural Network, SGD RMSProp: ", mse)
+
+    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0.0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="Adam")
+    costTrainAdam = NN.C
+    costTestAdam = NN.testC
 
     # # Plotting results
     # plt.figure(figsize=(6,4))

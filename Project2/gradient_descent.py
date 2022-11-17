@@ -5,7 +5,7 @@ from project1_functions import *
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 
-np.random.seed(2)
+# np.random.seed(2)
 
 def CostFunc(y, X, theta, lmd=0):
     return np.sum((y - X @ theta) @ (y - X @ theta).T) + lmd*(theta @ theta.T)
@@ -62,7 +62,7 @@ def gradient_descent(X_train, X_test, x_train, y_train, y_test, momentum=0, lmd=
     ### Numerical ###
 
     # initial parameters
-    eta = 0.01
+    eta = 0.001
     iterations = 1000
     theta_initial = np.random.randn(len(X[0]),1) # initial guess for parameters
     theta = theta_initial
@@ -100,7 +100,7 @@ def gradient_descent(X_train, X_test, x_train, y_train, y_test, momentum=0, lmd=
 
     x_axis = np.linspace(0,iterations,iterations+1)
     # plt.plot(x_axis, cost_train, label='None')
-    plt.plot(x_axis, cost_test, label='None')
+    plt.plot(x_axis, cost_train, label='None')
 
     print(f"\nMSE GD train: {cost_train[-1]}")
     print(f"MSE GD test: {cost_test[-1]}\n")
@@ -110,7 +110,7 @@ def gradient_descent(X_train, X_test, x_train, y_train, y_test, momentum=0, lmd=
     delta = 1e-8  # parameter to avoid possible zero division
     Giter = np.zeros((np.shape(X_train)[1],np.shape(X_train)[1]))  # storing the cumulative gradient
 
-    for _ in range(iterations):
+    for i in range(iterations):
         
         # calculate the gradient
         gradient = gradientFunc(X_train,y_train,theta,n,lmd)
@@ -133,7 +133,7 @@ def gradient_descent(X_train, X_test, x_train, y_train, y_test, momentum=0, lmd=
         cost_test[i+1] = MSE(y_test, y_predict)
 
     # plt.plot(x_axis, cost_train, label='AdaGrad')
-    plt.plot(x_axis, cost_test, label='AdaGrad')
+    plt.plot(x_axis, cost_train, label='AdaGrad')
     
     print(f"\nMSE GD AdaGrad train: {cost_train[-1]}")
     print(f"MSE GD AdaGrad test: {cost_test[-1]}\n")
@@ -144,7 +144,7 @@ def gradient_descent(X_train, X_test, x_train, y_train, y_test, momentum=0, lmd=
     change = 0
     RMS = np.zeros((np.shape(X_train)[1],np.shape(X_train)[1]))
 
-    for _ in range(iterations):
+    for i in range(iterations):
 
         # calculating the gradient
         gradient = gradientFunc(X_train,y_train,theta,n,lmd)
@@ -167,9 +167,8 @@ def gradient_descent(X_train, X_test, x_train, y_train, y_test, momentum=0, lmd=
 
         y_predict = np.dot(X_test, theta)
         cost_test[i+1] = MSE(y_test, y_predict)
-
     # plt.plot(x_axis, cost_train, label='RMSProp')
-    plt.plot(x_axis, cost_test, label='RMSProp')
+    plt.plot(x_axis, cost_train, label='RMSProp')
     
     print(f"\nMSE GD RMSProp train: {cost_train[-1]}")
     print(f"MSE GD RMSProp test: {cost_test[-1]}\n")
@@ -213,15 +212,15 @@ def gradient_descent(X_train, X_test, x_train, y_train, y_test, momentum=0, lmd=
         cost_test[i+1] = MSE(y_test, y_predict)
 
     # plt.plot(x_axis, cost_train, label='Adam')
-    plt.plot(x_axis, cost_test, label='Adam')
+    plt.plot(x_axis, cost_train, label='Adam')
     
     print(f"\nMSE GD Adam train: {cost_train[-1]}")
     print(f"MSE GD Adam test: {cost_test[-1]}\n")
 
-    plt.title('Gradient descent with adaptive learning rates.\n Test data')
+    plt.title('Gradient descent with adaptive learning rates.\n Training data')
     plt.xlabel('iterations')
     plt.ylabel('MSE')
-    plt.xscale('log')
+    # plt.xscale('log')
     plt.yscale('log')
     plt.legend()
     plt.show()
@@ -282,7 +281,7 @@ def stochastic_gradient_descent(X_train, X_test, x_train, y_train, y_test, momen
 
     x_axis = np.linspace(0, n_epochs, n_epochs + 1)
     # plt.plot(x_axis, cost_train, label='None')
-    plt.plot(x_axis, cost_test, label='None')
+    plt.plot(x_axis, cost_train, label='None')
     
     print(f"\nMSE SGD None train: {cost_train[-1]}")
     print(f"MSE SGD None test: {cost_test[-1]}\n")
@@ -317,7 +316,7 @@ def stochastic_gradient_descent(X_train, X_test, x_train, y_train, y_test, momen
         cost_test[epoch+1] = MSE(y_test, y_predict)
 
     # plt.plot(x_axis, cost_train, label='AdaGrad')
-    plt.plot(x_axis, cost_test, label='AdaGrad')
+    plt.plot(x_axis, cost_train, label='AdaGrad')
     
     print(f"\nMSE SGD AdaGrad train: {cost_train[-1]}")
     print(f"MSE SGD AdaGrad test: {cost_test[-1]}\n")
@@ -353,7 +352,7 @@ def stochastic_gradient_descent(X_train, X_test, x_train, y_train, y_test, momen
         cost_test[epoch+1] = MSE(y_test, y_predict)
 
     # plt.plot(x_axis, cost_train, label='RMSProp')
-    plt.plot(x_axis, cost_test, label='RMSProp')
+    plt.plot(x_axis, cost_train, label='RMSProp')
     
     print(f"\nMSE SGD RMSProp train: {cost_train[-1]}")
     print(f"MSE SGD RMSProp test: {cost_test[-1]}\n")
@@ -399,15 +398,15 @@ def stochastic_gradient_descent(X_train, X_test, x_train, y_train, y_test, momen
         cost_test[epoch+1] = MSE(y_test, y_predict)
 
     # plt.plot(x_axis, cost_train, label='Adam')
-    plt.plot(x_axis, cost_test, label='Adam')
+    plt.plot(x_axis, cost_train, label='Adam')
     
     print(f"\nMSE SGD Adam train: {cost_train[-1]}")
     print(f"MSE SGD Adam test: {cost_test[-1]}\n")
 
-    plt.title('Stochastic gradient descent with adaptive learning rates\n Test data.')
+    plt.title('Stochastic gradient descent with adaptive learning rates\n Training data.')
     plt.xlabel('epochs')
     plt.ylabel('MSE')
-    plt.xscale('log')
+    # plt.xscale('log')
     plt.yscale('log')
     plt.legend()
     plt.show()
@@ -442,7 +441,7 @@ if __name__ == "__main__":
 
     momentum = 0.0
     lmd = 0.0
-    gradient_descent(X_train, X_test, x_train, z_train, z_test, momentum=momentum, lmd=lmd)
+    # gradient_descent(X_train, X_test, x_train, z_train, z_test, momentum=momentum, lmd=lmd)
     stochastic_gradient_descent(X_train, X_test, x_train, z_train, z_test, momentum=momentum, lmd=lmd)
 
     # NOTE: the best eta for GD is 0.01, eta for SGD is 0.001.

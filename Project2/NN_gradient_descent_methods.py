@@ -6,7 +6,7 @@ def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momen
     Args:
   
     """
-    # toleranse for gradient clipping
+    # tolerancee for gradient clipping
     tol1 = 10**2
     tol2 = 10**4
 
