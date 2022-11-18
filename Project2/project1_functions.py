@@ -385,10 +385,11 @@ def ordinary_least_squares(x, y, z, polydeg=5, startdeg=1, resampling='None', k=
             R2_test[i-startdeg] = 1 - np.sum((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)/np.sum((z_test - np.mean(z_test))**2) # z_?
     
     # Calculate predicted values using all data (X)
-    z_scaled = (z_ - np.mean(z_))/np.std(z_)
-    z_tilde = X @ svd_algorithm(X, z_scaled)
+    # z_scaled = (z_ - np.mean(z_))/np.std(z_)
+    # z_tilde = X @ svd_algorithm(X, z_scaled)
+    z_tilde = X @ svd_algorithm(X, z_)
 
-    # make_plots(x,y,z,z_scaled,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
+    make_plots(x,y,z,z_,z_tilde,startdeg,polydeg,MSE_train,MSE_test,R2_train,R2_test,bias,vari,surface=True)
     return MSE_test#, parameters
 
 
@@ -768,12 +769,13 @@ if __name__=="__main__":
     # OLS regression
 
 
-    n = 10
+    n = 1
     for i in range(n):
         z = FrankeFunction(x, y) + np.random.normal(0, sigma, x.shape)
-        mse_no += ordinary_least_squares(x, y, z, polydeg=10, startdeg=4, resampling='None')            # No resampling
-        mse_bs += ordinary_least_squares(x, y, z, polydeg=10, startdeg=4, resampling='Bootstrap')       # Bootstrapping
-        mse_cv += ordinary_least_squares(x, y, z, polydeg=10, startdeg=4, resampling='CrossValidation') # 10-fold Cross-Validation
+        z = (z-np.amin(z))/(np.amax(z)-np.amin(z))
+        mse_no += ordinary_least_squares(x, y, z, polydeg=6, startdeg=6, resampling='None')            # No resampling
+        # mse_bs += ordinary_least_squares(x, y, z, polydeg=10, startdeg=6, resampling='Bootstrap')       # Bootstrapping
+        # mse_cv += ordinary_least_squares(x, y, z, polydeg=10, startdeg=6, resampling='CrossValidation') # 10-fold Cross-Validation
 
     mse_no /= n
     mse_bs /= n
