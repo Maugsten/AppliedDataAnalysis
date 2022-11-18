@@ -1,11 +1,9 @@
 
-from matplotlib.figure import figaspect
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from NN_gradient_descent_methods import *
 from project1_functions import *
-import time
 
 
 class Neural_Network(object):
@@ -75,7 +73,7 @@ class Neural_Network(object):
         """Propagate inputs through network.
         
         Args:
-            - X (ndarray): input values
+            - X (ndarray): input data
 
         Returns:
             - yHat (n x 1 array): predicted values
@@ -97,7 +95,6 @@ class Neural_Network(object):
             elif i == self.numberOfHiddenLayers:
                 self.z[i] = np.dot(self.a[i-1], self.W[i]) + self.B[i]
                 self.a[i] = self.z[i]
-                # self.a[i] = self.leakyReLU(self.z[i])  # for classification
 
         yHat = self.a[-1]
         return yHat
@@ -106,28 +103,28 @@ class Neural_Network(object):
         """ The standard logistic function
         
         Args: 
-            - z (?): ?
+            - z (ndarray): output from layer, input for activation function 
         """
-        #Apply sigmoid activation function to scalar, vector, or matrix
+       
         return 1/(1+np.exp(-z))
     
     def sigmoidPrime(self, z):
-        """ The erivative of the standard logistic function.
+        """ The derivative of the standard logistic function.
         
         Args: 
-            - z (?): ?
+            - z (ndarray): output from layer, input for activation function 
 
         Returns:
             - gradient of the sigmoid
         """
-        #Gradient of sigmoid
+        
         return np.exp(-z)/((1+np.exp(-z))**2)
 
     def ReLU(self, z):
         """ The ReLU function.
         
         Args:
-            - z (?): ?
+            - z (ndarray): output from layer, input for activation function 
         """
 
         return np.maximum(0, z)  # element-wise maximum of arrays elements, takes the maximum of 0 and the z-value
@@ -136,7 +133,7 @@ class Neural_Network(object):
         """ Derivative of ReLU
         
         Args:
-            - z (?): ?
+            - z (ndarray): output from layer, input for activation function 
         """
 
         return np.where(z <= 0, 0, 1)  # element-wise maximum of arrays elements, takes the maximum of 0 and the z-value
@@ -145,8 +142,8 @@ class Neural_Network(object):
         """ The leaky ReLU function. 
         
         Args:
-            - z (?): ?
-            - a (optional, float): ?
+            - z (ndarray): output from layer, input for activation function 
+            - a (optional, float): leaky ReLU parameter
 
         """
 
@@ -156,8 +153,8 @@ class Neural_Network(object):
         """ Derivative of leakyReLU
         
         Args:
-            - z (?): ?
-            - a (optional, float): ?
+            - z (ndarray): output from layer, input for activation function 
+            - a (optional, float): leaky ReLU parameter
 
         """
 
@@ -167,16 +164,15 @@ class Neural_Network(object):
         """ Calculates the cost for a given model. 
 
         Args:
-            - X (ndarray): 
-            - y (ndarray): 
+            - X (ndarray): input data
+            - y (ndarray): data to be measured against (either training or test data)
 
         Returns:
-            - C (float): the cost of the model ?        
+            - C (float): the cost of the model       
         """
         
         # prediction value
         self.yHat = self.forward(X)
-        # penalty ?
         regularization = sum([np.linalg.norm(self.W[i]) for i in range(len(self.W))])
         
         C = 0.5*sum((y-self.yHat)**2) + self.lmd*regularization
@@ -186,12 +182,12 @@ class Neural_Network(object):
         """ Computes the gradients in the network. 
 
         Args:
-            - X (ndarray): 
-            - y (ndarray): 
+            - X (ndarray): input data
+            - y (ndarray): data to be measured against (either training or test data)
 
         Returns:
-            - dCdW (nested list?): list of gradients in terms of weights. Every element contains a list of gradients for one layer in the network ?
-            - dCdB (list?): list of gradients in terms of biases. Every element contains a gradient for one layer in the network ? 
+            - dCdW (nested list): nested list of gradients in terms of weights. Every element contains a matrix of gradients
+            - dCdB (nested list): nested list of gradients in terms of biases. Every element contains a vector of gradients 
         """
         #Compute derivative with respect to weights and biases for a given X and y:
         self.yHat = self.forward(X)
@@ -200,7 +196,6 @@ class Neural_Network(object):
         dCdW = [0 for i in range(self.numberOfHiddenLayers+1)]  # list of derivatives of the cost function in terms of weights
         dCdB = [0 for i in range(self.numberOfHiddenLayers+1)]  # list of derivatives of the cost function in terms of biases
 
-        # delta[-1] = np.multiply(-(y-self.a[-1]), self.sigmoidPrime(self.z[-1]))
         delta[-1] = self.a[-1] - y
         dCdW[-1] = np.dot(self.a[-2].T, delta[-1])    
         dCdB[-1] = np.sum(delta[-1], axis=0)
@@ -220,7 +215,7 @@ class Neural_Network(object):
         """ Updates the weights and biases of the neural network by using gradient descent methods.
 
         Args: 
-            - trainX (ndarray): training data, independent variables
+            - trainX (ndarray): training data
             - trainY (ndarray): training data to fit
 
         Returns: None
@@ -246,11 +241,10 @@ class Neural_Network(object):
         """ Trains and tests the nerual network.
 
         Args:
-            - self ?
-            - trainX (ndarray): training data, independent variables ? 
+            - trainX (ndarray): training data 
             - trainY (ndarray): training data to fit
-            - testX (ndarray): test data, independent variables ?
-            - testY (ndarray): test data, dependent variables
+            - testX (ndarray): test data
+            - testY (ndarray): test data to fit
             - method (optional, str): choice of method, either GD (gradient descent, default) or SGD (stochastic gradient descent)
             - optimizer (optional, str): choice of optimizer, either None (plain gradient descent, default), AdaGrad, RMSprop or Adam 
 
@@ -359,20 +353,14 @@ class Neural_Network(object):
         """ Mean square error
 
         Args:
-            - y
+            - y (array): the data we are fitting
+        
+        Returns:
+            - mse (float): mean square error
         """
         mse = np.mean(np.mean((y - self.yHat)**2, axis=1, keepdims=True))
         return mse
     
-    def R2(self, y):
-        """ R2 score
-        
-        Args:
-            - y
-        """
-        r2 = 1 - sum((y-self.yHat)**2) / sum((y-np.mean(y))**2) 
-        return r2
-
 
 if __name__=="__main__":
     """ ========================= Regression ========================= """
@@ -810,74 +798,3 @@ if __name__=="__main__":
     # ax.set_xlabel("Number of Nodes in Layers")
     # fig.tight_layout()
     # plt.show()
-
-
-    """  ======================= OLD CODE =======================
-    np.random.seed(10)
-    
-    # Setting the data
-    n = 1000
-    x = np.random.rand(n,1)
-
-    noise = np.random.normal(0, .5, x.shape)
-    y = 3 + 2*x + 3*x**2 + 4*x**3 #+ noise
-    # y = np.e**(-x**2) #+ noise
-    # y = np.sin(x) + noise
-
-    # Scaling the data
-    x = x/np.max(x)
-    y = y/np.max(y)  # max test score is 100
-
-    # print(np.shape(x))
-    # print(np.shape(y))
-
-    X = np.zeros((len(x), 2))
-    X[:,0] = x.reshape(1,-1)
-    X[:,1] = x.reshape(1,-1)**2
-
-    print(np.shape(X))
-    print(np.shape(y))
-    # Splitting into train and test data
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-    print(np.shape(X_train))
-    print(np.shape(y_train))
-    
-    # nodes = np.array([5, 7, 4])
-    nodes = np.array([7, 5])
-    NN = Neural_Network(X_train, 2, nodes, outputLayerSize=1, eta=0.01, lmd=0.0001, momentum=0, epochs=1000)
-    NN.train(X_train, y_train, X_test, y_test,method='SGD')#, method='SGD', optimizer='Adam')
-
-    """
-    # # Training the network
-    # NN = Neural_Network()
-    # NN.train(X_train, y_train, X_test, y_test, method='GD')
-    """
-    # Plotting results
-    plt.figure(figsize=(6,4))
-    plt.plot(NN.C, label='Train Data')
-    plt.plot(NN.testC, label='Test Data')
-    plt.grid()
-    plt.title('Training our neural network')
-    plt.xlabel('Iterations')
-    plt.ylabel('Cost')
-    plt.legend()
-    plt.show()
-    
-    x = np.linspace(0,1,n).reshape(1,-1).T
-
-    y = 3 + 2*x + 3*x**2 + 4*x**3 #+ noise    
-    # y = np.e**(-x**2) #+ noise
-
-    x = x/np.max(x)
-    y = y/np.max(y) #Max test score is 100
-
-    yHat = NN.forward(x)
-    plt.figure(figsize=(6,4))
-    plt.plot(x, y, label='Real data')
-    plt.plot(x, yHat, '--', label='Fitted NN data')
-    plt.title('Comparison of real data and fitted data')
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.legend()
-    plt.show()
-    """

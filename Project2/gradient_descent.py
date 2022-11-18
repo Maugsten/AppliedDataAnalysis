@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 np.random.seed(2)
 
 def CostFunc(y, X, theta, lmd=0):
-    return np.sum((y - X @ theta) @ (y - X @ theta).T) + lmd*(theta @ theta.T)  # should divide expression by 2 (*1/2)
+    return np.sum((y - X @ theta) @ (y - X @ theta).T)/2 + lmd*(theta @ theta.T)  
 
 def gradientFunc(X,y,theta,n,lmd=0):    
     return (1.0/n) * X.T @ (X @ (theta) - y) + 2 * lmd * theta
@@ -220,7 +220,6 @@ def gradient_descent(X_train, X_test, x_train, y_train, y_test, momentum=0, lmd=
     plt.title('Gradient descent with adaptive learning rates.\n Training data', fontsize=20)
     plt.xlabel('iterations', fontsize=12)
     plt.ylabel('MSE', fontsize=12)
-    # plt.xscale('log')
     plt.yscale('log')
     plt.legend()
     plt.grid()
@@ -407,7 +406,6 @@ def stochastic_gradient_descent(X_train, X_test, x_train, y_train, y_test, momen
     plt.title('Stochastic gradient descent with adaptive learning rates\n Training data.', fontsize=16)
     plt.xlabel('epochs', fontsize=12)
     plt.ylabel('MSE', fontsize=12)
-    # plt.xscale('log')
     plt.yscale('log')
     plt.legend(fontsize=12)
     plt.grid()
@@ -446,6 +444,6 @@ if __name__ == "__main__":
     gradient_descent(X_train, X_test, x_train, z_train, z_test, momentum=momentum, lmd=lmd)
     stochastic_gradient_descent(X_train, X_test, x_train, z_train, z_test, momentum=momentum, lmd=lmd)
 
-    # NOTE: the best eta for GD is 0.01, eta for SGD is 0.001.
+    # NOTE: the best eta for GD is 0.01, best eta for SGD is 0.001.
 
 

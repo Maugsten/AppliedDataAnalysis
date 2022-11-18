@@ -4,6 +4,22 @@ import numpy as np
 def gradient_descent(dCdW: list, dCdB: list, W: list, B: list, eta: float, momentum: float, change: list, optimizer: str, RMS_W, RMS_B, M_W, M_B, iteration, dCdW2, dCdB2):
     """
     Args:
+        - dCdW: cost function gradient in terms of weights
+        - dCdB: cost function gradient in terms of biases
+        - W: weights
+        - B: biases
+        - eta: learning rate
+        - momentum: momentum
+        - change: for momentum part
+        - optimizer: optimizer method, either None, AdaGrad, RMSProp or Adam
+        - RMS_W, RMS_B: for RMSProp method
+        - M_W, M_B: for Adam method
+        - iteration: number of the current iteration
+        - dCdW2: squared gradient
+        - dCdB2: squared gradient
+
+    Returns:
+        - W, B: updated weights and biases
   
     """
     # tolerancee for gradient clipping
