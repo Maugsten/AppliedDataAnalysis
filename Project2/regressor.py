@@ -109,7 +109,7 @@ class Neural_Network(object):
         return yHat
         
     def sigmoid(self, z):
-        """ The sigmoid function
+        """ The standard logistic function
         
         Args: 
             - z (?): ?
@@ -118,7 +118,7 @@ class Neural_Network(object):
         return 1/(1+np.exp(-z))
     
     def sigmoidPrime(self, z):
-        """ Derivative of sigmoid.
+        """ The erivative of the standard logistic function.
         
         Args: 
             - z (?): ?
@@ -397,10 +397,23 @@ if __name__=="__main__":
     # Standard deviation of the noise
     sigma = .1  
 
-    # Franke function with stochastic noise
-    z = FrankeFunction(x, y) #+ np.random.normal(0, sigma, x.shape)
-    m, n = np.shape(z)
-    z_ = z.reshape(-1,1)
+    mseF = 0
+    reps = 1
+    for i in range(int(reps)):
+        # Franke function with stochastic noise
+        z = FrankeFunction(x, y) + np.random.normal(0, sigma, x.shape)
+        maxVal = np.amax(z)
+        minVal = np.amin(z)
+        z = (z-minVal)/(maxVal-minVal)
+        m, n = np.shape(z)
+        z_ = z.reshape(-1,1)
+
+        # This is just to make some error prediction
+        zF = FrankeFunction(x, y)
+        zF = (zF-minVal)/(maxVal-minVal)
+        zF_ = zF.reshape(-1,1)
+        mseF += np.mean(np.mean((z - zF)**2, axis=1, keepdims=True))
+    print('Mean error with no-noise Franke: ', mseF/reps)
 
     # Feature matrix
     X = np.zeros((len(x)**2, 2))
@@ -442,9 +455,9 @@ if __name__=="__main__":
     z_train = (z_train - np.amin(z_train)) / (np.amax(z_train) - np.amin(z_train)) # Normalization
 
     """ Our basic network """
-    # nodes = np.array([50, 50, 50])
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
-    # NN.train(X_train, z_train, X_test, z_test, method='SGD')
+    # nodes = np.array([25])
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer='Adam')
 
     # mse = NN.MSE(z_test)
     # print("Neural Network: ", mse)
@@ -508,88 +521,62 @@ if __name__=="__main__":
     """ In this section, we vary momentum """
     # nodes = [20]
     # # momentums = np.logspace(-.5, -3, 4)
-    # momentums = [1, 0.5, 0.1, 0.01]
+    # momentums = [0.5, 0.1, 0.01, 0]
     
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=momentums[0], maxIterations=500, epochs=100, batchSize=10)
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=momentums[0], maxIterations=500, epochs=100, batchSize=5)
     # NN.train(X_train, z_train, X_test, z_test, method='SGD')
     # C1 = NN.C
 
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=momentums[1], maxIterations=500, epochs=100, batchSize=10)
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=momentums[1], maxIterations=500, epochs=100, batchSize=5)
     # NN.train(X_train, z_train, X_test, z_test, method='SGD')
     # C2 = NN.C
 
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=momentums[2], maxIterations=500, epochs=100, batchSize=10)
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=momentums[2], maxIterations=500, epochs=100, batchSize=5)
     # NN.train(X_train, z_train, X_test, z_test, method='SGD')
     # C3 = NN.C
 
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=momentums[3], maxIterations=500, epochs=100, batchSize=10)
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=momentums[3], maxIterations=500, epochs=100, batchSize=5)
     # NN.train(X_train, z_train, X_test, z_test, method='SGD')
     # C4 = NN.C
 
-    # dC1di = []
-    # dC2di = []
-    # dC3di = []
-    # dC4di = []
-    # for i in range(len(C1)-1):
-    #     dC1di.append(abs(C1[i+1]-C1[i]))
-    #     dC2di.append(abs(C2[i+1]-C2[i]))
-    #     dC3di.append(abs(C3[i+1]-C3[i]))
-    #     dC4di.append(abs(C4[i+1]-C4[i]))
+    # C1 = np.array(C1).flatten()
+    # C2 = np.array(C2).flatten()
+    # C3 = np.array(C3).flatten()
+    # C4 = np.array(C4).flatten()
 
-    # dC1di = np.array(dC1di).flatten()
-    # dC2di = np.array(dC2di).flatten()
-    # dC3di = np.array(dC3di).flatten()
-    # dC4di = np.array(dC4di).flatten()
-
-    # kernel_size = 10
+    # # Smoothing was not used in final results
+    # kernel_size = 1
     # kernel = np.ones(kernel_size) / kernel_size
 
-    # dC1di = np.convolve(dC1di[:100], kernel, mode='same')
-    # dC2di = np.convolve(dC2di[:100], kernel, mode='same')
-    # dC3di = np.convolve(dC3di[:100], kernel, mode='same')
-    # dC4di = np.convolve(dC4di[:100], kernel, mode='same')
-    
+    # C1Smooth = np.convolve(C1[:100], kernel, mode='same')
+    # C2Smooth = np.convolve(C2[:100], kernel, mode='same')
+    # C3Smooth = np.convolve(C3[:100], kernel, mode='same')
+    # C4Smooth = np.convolve(C4[:100], kernel, mode='same')
+
     # plt.figure(figsize=(6,4))
-    # plt.plot(dC1di, label='Momentum=1')
-    # plt.plot(dC2di, label='Momentum=0.5')
-    # plt.plot(dC3di, label='Momentum=0.1')
-    # plt.plot(dC4di, label='Momentum=0.01')
+    # plt.plot(C1Smooth, label='Momentum=0.5')
+    # plt.plot(C2Smooth, label='Momentum=0.1')
+    # plt.plot(C3Smooth, label='Momentum=0.01')
+    # plt.plot(C4Smooth, label='Momentum=0')
     # plt.grid()
     # # plt.yscale('log')
-    # plt.title('Change in Cost Function per Iteration')
+    # plt.title('Cost Function per Iteration')
     # plt.xlabel('Iterations')
-    # plt.ylabel(r'$\Delta C$')
+    # plt.ylabel('Cost')
     # plt.legend()
-    # plt.show()
-
-    # MSE = np.zeros(len(momentums))
-    # MSEref = np.zeros_like(MSE)
-    # for i in range(len(momentums)):
-    #     print('\n', momentums[i])
-    #     NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=momentums[i], maxIterations=500, epochs=100, batchSize=10)
-    #     NN.train(X_train, z_train, X_test, z_test, method='SGD')
-    #     MSE[i] = NN.MSE(z_test)
-
-    #     NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=10)
-    #     NN.train(X_train, z_train, X_test, z_test, method='SGD')
-    #     MSEref[i] = NN.MSE(z_test)
-
-    #     print(MSE[i])
-    #     print(MSEref[i])
 
     # plt.figure(figsize=(6,4))
-    # plt.plot(momentums, MSE, 'r', linewidth=1.5, label='With Momentum')
-    # plt.plot(momentums, MSEref, 'k--', linewidth=1.5, label='Without Momentum')
-    # plt.xscale('log')
-    # plt.title('MSE of Neural Network Prediction')
-    # plt.xlabel('Momentum')
-    # plt.ylabel('MSE')
-    # plt.legend()
+    # plt.plot(C1Smooth, label='Momentum=0.5')
+    # plt.plot(C2Smooth, label='Momentum=0.1')
+    # plt.plot(C3Smooth, label='Momentum=0.01')
+    # plt.plot(C4Smooth, label='Momentum=0')
     # plt.grid()
+    # plt.yscale('log')
+    # plt.title('Cost Function per Iteration')
+    # plt.xlabel('Iterations')
+    # plt.ylabel('Cost')
+    # plt.legend()    
     # plt.show()
-
-    # std = np.std(np.real(MSEref))
-    # print("\nVariance without momentum: ", std) 
 
     """ Activation functions """
 
@@ -610,38 +597,38 @@ if __name__=="__main__":
     # print("Neural Network: ", mse/reps)
 
     """ Adaptive Learning """
-    nodes = np.array([6])
-    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0.0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    NN.train(X_train, z_train, X_test, z_test, method='SGD')
-    costTrainNoLearning = NN.C
-    costTestNoLearning = NN.testC
+    # nodes = np.array([6])
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0.0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD')
+    # costTrainNoLearning = NN.C
+    # costTestNoLearning = NN.testC
 
-    # MSE
-    mse = NN.MSE(z_test)
-    print("Neural Network, SGD None: ", mse)
+    # # MSE
+    # mse = NN.MSE(z_test)
+    # print("Neural Network, SGD None: ", mse)
 
-    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0.0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="AdaGrad")
-    costTrainAdagrad = NN.C
-    costTestAdagrad = NN.testC
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0.0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="AdaGrad")
+    # costTrainAdagrad = NN.C
+    # costTestAdagrad = NN.testC
 
-    # MSE
-    mse = NN.MSE(z_test)
-    print("Neural Network, SGD AdaGrad: ", mse)
+    # # MSE
+    # mse = NN.MSE(z_test)
+    # print("Neural Network, SGD AdaGrad: ", mse)
 
-    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0.0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="RMSprop")
-    costTrainRMSprop = NN.C
-    costTestRMSprop = NN.testC
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0.0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="RMSprop")
+    # costTrainRMSprop = NN.C
+    # costTestRMSprop = NN.testC
 
-    # MSE
-    mse = NN.MSE(z_test)
-    print("Neural Network, SGD RMSProp: ", mse)
+    # # MSE
+    # mse = NN.MSE(z_test)
+    # print("Neural Network, SGD RMSProp: ", mse)
 
-    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0.0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="Adam")
-    costTrainAdam = NN.C
-    costTestAdam = NN.testC
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0.0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer="Adam")
+    # costTrainAdam = NN.C
+    # costTestAdam = NN.testC
 
     # # Plotting results
     # plt.figure(figsize=(6,4))
@@ -668,9 +655,9 @@ if __name__=="__main__":
     # plt.show()
 
     """ In this section, we post-process our findings. """
-    nodes = np.array([25, 25])
-    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    NN.train(X_train, z_train, X_test, z_test, method='SGD')#, method='SGD', optimizer='Adam')
+    nodes = np.array([25])
+    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer='Adam')
     
     # MSE
     mse = NN.MSE(z_test)
@@ -706,15 +693,15 @@ if __name__=="__main__":
     ax2.set_title("Neural Network Fit")
     fig.colorbar(surf1, shrink=0.5, aspect=10)
 
-    # Plotting results
-    plt.figure(figsize=(6,4))
-    plt.plot(NN.C, label='Train Data')
-    plt.plot(NN.testC, label='Test Data')
-    plt.grid()
-    plt.title('Training our neural network')
-    plt.xlabel('Iterations')
-    plt.ylabel('Cost')
-    plt.legend()
+    # # Plotting results
+    # plt.figure(figsize=(6,4))
+    # plt.plot(NN.C, label='Train Data')
+    # plt.plot(NN.testC, label='Test Data')
+    # plt.grid()
+    # plt.title('Training our neural network')
+    # plt.xlabel('Iterations')
+    # plt.ylabel('Cost')
+    # plt.legend()
     plt.show()
 
 
