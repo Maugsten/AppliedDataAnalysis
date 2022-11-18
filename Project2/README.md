@@ -1,7 +1,7 @@
 # Project 2
 
 In this directory you will find everything on the second project of the semester. 
-In the "Report" folder, you will find the report. In the "Code" folder, you will find five python scripts and an excel file containing data.
+In the "Report" folder, you will find the report. In the "Code" folder, you will find five python scripts and a CSV file containing data.
 
 ## Files
 
