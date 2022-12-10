@@ -84,12 +84,12 @@ class Neural_Network(object):
             # first layer
             if i == 0:
                 self.z[0] = np.dot(X, self.W[0]) + self.B[0]  # NB! numpy turns the vector B into a matrix of the correct shape so that it can be added to the other matrix
-                self.a[0] = self.leakyReLU(self.z[0])
+                self.a[0] = self.sigmoid(self.z[0])
 
             # hidden layers
             elif 0 < i < self.numberOfHiddenLayers:
                 self.z[i] = np.dot(self.a[i-1], self.W[i]) + self.B[i]
-                self.a[i] = self.leakyReLU(self.z[i])  
+                self.a[i] = self.sigmoid(self.z[i])  
 
             # output layer
             elif i == self.numberOfHiddenLayers:
@@ -201,11 +201,11 @@ class Neural_Network(object):
         dCdB[-1] = np.sum(delta[-1], axis=0)
 
         for i in range(self.numberOfHiddenLayers-1, 0, -1):
-            delta[i] = np.dot(delta[i+1], self.W[i+1].T)*self.leakyReLUPrime(self.z[i])
+            delta[i] = np.dot(delta[i+1], self.W[i+1].T)*self.sigmoidPrime(self.z[i])
             dCdW[i] = np.dot(self.a[i-1].T, delta[i])    
             dCdB[i] = np.sum(delta[i], axis=0) 
 
-        delta[0] = np.dot(delta[1], self.W[1].T)*self.leakyReLUPrime(self.z[0])
+        delta[0] = np.dot(delta[1], self.W[1].T)*self.sigmoidPrime(self.z[0])
         dCdW[0] = np.dot(X.T, delta[0])    
         dCdB[0] = np.sum(delta[0], axis=0) 
 
@@ -369,7 +369,7 @@ if __name__=="__main__":
     print("Score to beat:  ", 0.00768127)
 
     # Sets seed so results can be reproduced.
-    # np.random.seed(1)  
+    np.random.seed(2000)  
 
     # Defines domain. No need to scale this data as it's already in the range (0,1)
     x = np.arange(0, 1, 0.05)
@@ -404,30 +404,6 @@ if __name__=="__main__":
 
     # Splitting into train and test data
     X_train, X_test, z_train, z_test = train_test_split(X, z_, test_size=0.2)
-
-    # n = 1000
-    # x = np.random.rand(n,1)
-
-    # noise = np.random.normal(0, .5, x.shape)
-    # y = 3 + 2*x + 3*x**2 + 4*x**3 #+ noise
-    # # y = np.e**(-x**2) #+ noise
-    # # y = np.sin(x) + noise
-
-    # # Scaling the data
-    # x = x/np.max(x)
-    # y = y/np.max(y)  # max test score is 100
-
-    # # print(np.shape(x))
-    # # print(np.shape(y))
-
-    # X = np.zeros((len(x), 2))
-    # X[:,0] = x.reshape(1,-1)
-    # X[:,1] = x.reshape(1,-1)**2
-
-    # print(np.shape(X))
-    # print(np.shape(y))
-    # # Splitting into train and test data
-    # X_train, X_test, z_train, z_test = train_test_split(x, y, test_size=0.2)
     
     # Scaling
     for j in range(len(X_test[0,:])):
@@ -437,12 +413,12 @@ if __name__=="__main__":
     z_train = (z_train - np.amin(z_train)) / (np.amax(z_train) - np.amin(z_train)) # Normalization
 
     """ Our basic network """
-    # nodes = np.array([25])
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
-    # NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer='Adam')
+    nodes = np.array([25])
+    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0, momentum=0, maxIterations=500, epochs=100, batchSize=5)
+    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer='Adam')
 
-    # mse = NN.MSE(z_test)
-    # print("Neural Network: ", mse)
+    mse = NN.MSE(z_test)
+    print("Neural Network: ", mse)
 
     
 
@@ -636,44 +612,44 @@ if __name__=="__main__":
     # plt.legend()
     # plt.show()
 
-    """ In this section, we post-process our findings. """
-    nodes = np.array([25])
-    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer='Adam')
+    """ In this section, we make surface plots. """
+    # nodes = np.array([25])
+    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.001, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    # NN.train(X_train, z_train, X_test, z_test, method='SGD', optimizer='Adam')
     
-    # MSE
-    mse = NN.MSE(z_test)
-    print("Neural Network: ", mse)
+    # # MSE
+    # mse = NN.MSE(z_test)
+    # print("Neural Network: ", mse)
 
     
-    zHat = NN.forward(X).reshape((m,n))
-    fig = plt.figure(figsize=plt.figaspect(0.5), constrained_layout=True)
-    ax1 = fig.add_subplot(1, 2, 1, projection='3d')
-    ax2 = fig.add_subplot(1, 2, 2, projection='3d')
+    # zHat = NN.forward(X).reshape((m,n))
+    # fig = plt.figure(figsize=plt.figaspect(0.5), constrained_layout=True)
+    # ax1 = fig.add_subplot(1, 2, 1, projection='3d')
+    # ax2 = fig.add_subplot(1, 2, 2, projection='3d')
 
-    surf1 = ax1.plot_surface(x, y, z, cmap=cm.coolwarm,
-                            linewidth=0, antialiased=False)
-    surf2 = ax2.plot_surface(x, y, zHat, cmap=cm.coolwarm,
-                            linewidth=0, antialiased=False)
+    # surf1 = ax1.plot_surface(x, y, z, cmap=cm.coolwarm,
+    #                         linewidth=0, antialiased=False)
+    # surf2 = ax2.plot_surface(x, y, zHat, cmap=cm.coolwarm,
+    #                         linewidth=0, antialiased=False)
 
-    ax1.set_zlim(np.amin(z), np.amax(z))
-    ax1.zaxis.set_major_locator(LinearLocator(10))
-    ax1.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-    ax1.set_xlabel('x')
-    ax1.set_ylabel('y')
-    ax1.yaxis._axinfo['label']
-    ax1.set_zlabel('z')
-    ax1.set_title("Original Data")
+    # ax1.set_zlim(np.amin(z), np.amax(z))
+    # ax1.zaxis.set_major_locator(LinearLocator(10))
+    # ax1.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+    # ax1.set_xlabel('x')
+    # ax1.set_ylabel('y')
+    # ax1.yaxis._axinfo['label']
+    # ax1.set_zlabel('z')
+    # ax1.set_title("Original Data")
 
-    ax2.set_zlim(np.amin(z), np.amax(z))
-    ax2.zaxis.set_major_locator(LinearLocator(10))
-    ax2.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-    ax2.set_xlabel('x')
-    ax2.set_ylabel('y')
-    ax2.yaxis._axinfo['label']
-    ax2.set_zlabel('z')
-    ax2.set_title("Neural Network Fit")
-    fig.colorbar(surf1, shrink=0.5, aspect=10)
+    # ax2.set_zlim(np.amin(z), np.amax(z))
+    # ax2.zaxis.set_major_locator(LinearLocator(10))
+    # ax2.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+    # ax2.set_xlabel('x')
+    # ax2.set_ylabel('y')
+    # ax2.yaxis._axinfo['label']
+    # ax2.set_zlabel('z')
+    # ax2.set_title("Neural Network Fit")
+    # fig.colorbar(surf1, shrink=0.5, aspect=10)
 
     # # Plotting results
     # plt.figure(figsize=(6,4))
@@ -684,7 +660,7 @@ if __name__=="__main__":
     # plt.xlabel('Iterations')
     # plt.ylabel('Cost')
     # plt.legend()
-    plt.show()
+    # plt.show()
 
 
 
@@ -699,25 +675,25 @@ if __name__=="__main__":
     """ Setting up data """
     # M = Malignant = BAD
     # B = Benign = NOT BAD   
-    num_lines = sum(1 for line in open('archive\data.csv', 'r'))
-    file = open('archive\data.csv', 'r')
+    num_lines = sum(1 for line in open('data.csv', 'r'))
+    file = open('data.csv', 'r')
     features = np.array(file.readline().split(','))[:-1]
     data = []
     for i in range(num_lines-1):
         data.append(np.array(file.readline().split(',')))
     data = np.array(data)
+
     X = data[:,2:]
     X = X.astype(np.float64)
     y = data[:,1]
     for i in range(len(y)):
-        if y[i]=='M':
+        if y[i]=="M":
             y[i]=1
-        elif y[i]=='B':
+        elif y[i]=="B":
             y[i]=0
         else:
             print('Unrecognised data')
     y = y.astype(np.float64).reshape(1,-1).T
-    
     # Scaling the features (normalization)
     for i in range(len(X[0,:])):
         X[:,i] = (X[:,i]-np.amin(X[:,i])) / (np.amax(X[:,i]) - np.amin(X[:,i]))
@@ -727,34 +703,34 @@ if __name__=="__main__":
     # Splitting into train and test data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-    """ test net """
-    # # Training the network
-    # nodes = np.array([15,15,15])
-    # NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
-    # NN.train(X_train, y_train, X_test, y_test, method='GD', optimizer='Adam')#, method='SGD', optimizer='Adam')
+    """ Basic Network """
+    # Training the network
+    nodes = np.array([25])
+    NN = Neural_Network(X_train, len(nodes), nodes, outputLayerSize=1, eta=0.01, lmd=0, momentum=0, maxIterations=1000, epochs=100, batchSize=5)
+    NN.train(X_train, y_train, X_test, y_test, method='GD', optimizer='Adam')#, method='SGD', optimizer='Adam')
 
-    # prediction = NN.forward(X_test)
-    # for i in range(len(prediction)):
-    #     if prediction[i]>=0.5:
-    #         prediction[i]=1
-    #     elif prediction[i]<0.5:
-    #         prediction[i]=0
-    #     else:
-    #         print('Unrecognised data')
+    prediction = NN.forward(X_test)
+    for i in range(len(prediction)):
+        if prediction[i]>=0.5:
+            prediction[i]=1
+        elif prediction[i]<0.5:
+            prediction[i]=0
+        else:
+            print('Unrecognised data')
 
-    # errors = abs(y_test-prediction)
-    # accuracy = 1 - np.sum(errors)/len(errors)
-    # print('Accuracy: {}'.format(accuracy))
+    errors = abs(y_test-prediction)
+    accuracy = 1 - np.sum(errors)/len(errors)
+    print('Accuracy: {}'.format(accuracy))
 
-    # # Plotting results
-    # plt.figure(figsize=(6,4))
-    # plt.plot(NN.C)
-    # plt.plot(NN.testC)
-    # plt.grid()
-    # plt.title('Training our neural network')
-    # plt.xlabel('Iterations')
-    # plt.ylabel('Cost')
-    # plt.show()
+    # Plotting results
+    plt.figure(figsize=(6,4))
+    plt.plot(NN.C)
+    plt.plot(NN.testC)
+    plt.grid()
+    plt.title('Training our neural network')
+    plt.xlabel('Iterations')
+    plt.ylabel('Cost')
+    plt.show()
 
     """ Layers and nodes """
     # nLayers = 3
