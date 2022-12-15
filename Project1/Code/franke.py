@@ -18,16 +18,16 @@ z = FrankeFunction(x, y) + np.random.normal(0, sigma, x.shape)
 
 """ Each run below runs a regression of the Franke function. """
 # OLS regression
-ordinary_least_squares(x, y, z, polydeg=10, resampling='None')            # No resampling
+# ordinary_least_squares(x, y, z, polydeg=10, resampling='None')            # No resampling
 ordinary_least_squares(x, y, z, polydeg=10, resampling='Bootstrap')       # Bootstrapping
-ordinary_least_squares(x, y, z, polydeg=10, resampling='CrossValidation') # 10-fold Cross-Validation
+# ordinary_least_squares(x, y, z, polydeg=10, resampling='CrossValidation') # 10-fold Cross-Validation
 
-# Ridge regression
-ridge(x, y, z, lmd, polydeg=10, resampling='None')            # No resampling
-ridge(x, y, z, lmd, polydeg=10, resampling='Bootstrap')       # Bootstrapping
-ridge(x, y, z, lmd, polydeg=10, resampling='CrossValidation') # 10-fold Cross-Validation
+# # Ridge regression
+# ridge(x, y, z, lmd, polydeg=10, resampling='None')            # No resampling
+# ridge(x, y, z, lmd, polydeg=10, resampling='Bootstrap')       # Bootstrapping
+# ridge(x, y, z, lmd, polydeg=10, resampling='CrossValidation') # 10-fold Cross-Validation
 
-# LASSO
-lasso(x, y, z, lmd, polydeg=10, resampling='None')            # No resampling
-lasso(x, y, z, lmd, polydeg=10, resampling='Bootstrap')       # Bootstrapping
-lasso(x, y, z, lmd, polydeg=10, resampling='CrossValidation') # 10-fold Cross-Validation
+# # LASSO
+# lasso(x, y, z, lmd, polydeg=10, resampling='None')            # No resampling
+# lasso(x, y, z, lmd, polydeg=10, resampling='Bootstrap')       # Bootstrapping
+# lasso(x, y, z, lmd, polydeg=10, resampling='CrossValidation') # 10-fold Cross-Validation

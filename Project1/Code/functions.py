@@ -281,6 +281,9 @@ def ordinary_least_squares(x, y, z, polydeg=5, startdeg=1, resampling='None', k=
                 z_tilde_train[:,j] = X_train @ b.flatten()
                 z_tilde_test[:,j] = X_test @ b.flatten()
 
+            # print(np.shape(z_train))
+            # print(np.shape(z_tilde_train))
+
             MSE_train[i-startdeg] = np.mean(np.mean((z_train - z_tilde_train)**2, axis=1, keepdims=True))
             MSE_test[i-startdeg] = np.mean(np.mean((z_test - z_tilde_test)**2, axis=1, keepdims=True))
             bias[i-startdeg] = np.mean((z_test - np.mean(z_tilde_test, axis=1, keepdims=True))**2)        
